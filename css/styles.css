@@ -12,7 +12,7 @@
   --radius: 20px;
   --radius-sm: 16px;
   --radius-lg: 24px;
-  --header-h: 76px;
+  --header-h: 88px;
   --max: 1160px;
   --whatsapp: #25d366;
 }
@@ -97,23 +97,38 @@ textarea {
 
 .logo {
   display: flex;
-  flex-direction: column;
-  line-height: 1.1;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 1;
+  min-width: 0;
   color: var(--primary);
+}
+
+.logo img {
+  display: block;
+  height: 72px;
+  width: auto;
   flex-shrink: 0;
 }
 
-.logo-mark {
-  font-weight: 800;
-  font-size: 1.35rem;
-  letter-spacing: -0.03em;
-}
-
 .logo-sub {
-  font-size: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.78rem;
   font-weight: 500;
   color: var(--text-muted);
-  margin-top: 3px;
+  line-height: 1.25;
+}
+
+@media (max-width: 420px) {
+  .logo img {
+    height: 58px;
+  }
+
+  .logo-sub {
+    font-size: 0.68rem;
+  }
 }
 
 .nav-list {
@@ -604,6 +619,18 @@ body.nav-open .mobile-nav {
   font-size: 0.92rem;
 }
 
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-logo {
+  height: 88px;
+  width: auto;
+}
+
 .footer-links {
   display: flex;
   justify-content: center;
@@ -714,6 +741,18 @@ body.nav-open .mobile-nav {
     justify-content: space-between;
     text-align: start;
     align-items: center;
+  }
+
+  .footer-brand {
+    align-items: flex-start;
+  }
+
+  .logo img {
+    height: 76px;
+  }
+
+  .logo-sub {
+    font-size: 0.82rem;
   }
 }
 

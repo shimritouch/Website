@@ -18,6 +18,6 @@ npx --yes serve .
 
 תמונות האווירה הן תמונות ספא מ-[Unsplash](https://unsplash.com) (רישיון Unsplash). מקום שמור לדיוקן של שמרית כשיהיה זמין.
 
-- `hero.jpg` — [photo-1600334129128-685c5582fd35](https://unsplash.com/photos/1600334129128-685c5582fd35)
+- `hero.jpg` — תמונת אווירה מותאמת לפלטת המותג (זית, שמנת, אקליפטוס)
 - `about.jpg` — [photo-1544161515-4ab6ce6db874](https://unsplash.com/photos/1544161515-4ab6ce6db874)
 - `vip.jpg` — [photo-1507652313519-d4e9174996dd](https://unsplash.com/photos/1507652313519-d4e9174996dd)

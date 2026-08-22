@@ -5,7 +5,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: calc(var(--header-h) + 16px);
+  scroll-padding-top: calc(var(--header-h) + 8px);
 }
 
 body.nav-open {
@@ -27,10 +27,45 @@ body.nav-open {
   top: 12px;
 }
 
-.glass-nav {
-  background: rgba(250, 248, 245, 0.55);
-  backdrop-filter: blur(20px) saturate(1.35);
-  -webkit-backdrop-filter: blur(20px) saturate(1.35);
+.glass-nav,
+.nav-bar {
+  background: rgba(250, 248, 245, 0.28);
+  backdrop-filter: blur(14px) saturate(1.25);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  transition: background 0.35s ease, box-shadow 0.35s ease, height 0.35s ease;
+}
+
+body.is-scrolled .nav-bar {
+  background: rgba(250, 248, 245, 0.78);
+  box-shadow: 0 16px 40px rgba(62, 74, 61, 0.1);
+}
+
+.nav-bar {
+  height: 88px;
+}
+
+body.is-scrolled .nav-bar {
+  height: 68px;
+}
+
+.logo img {
+  height: 64px;
+  width: auto;
+  transition: height 0.35s ease;
+}
+
+body.is-scrolled .logo img {
+  height: 46px;
+}
+
+@media (max-width: 640px) {
+  .logo img {
+    height: 48px;
+  }
+
+  body.is-scrolled .logo img {
+    height: 40px;
+  }
 }
 
 .glass-sheet {
@@ -42,9 +77,84 @@ body.nav-open {
 }
 
 .glass-dark {
-  background: rgba(62, 74, 61, 0.72);
+  background: rgba(62, 74, 61, 0.62);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+}
+
+.hero-copy {
+  background: rgba(62, 74, 61, 0.36);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  border: 1px solid rgba(250, 248, 245, 0.18);
+}
+
+.ken-burns {
+  animation: kenburns 24s ease-out forwards;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+@keyframes kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+[data-reveal][data-delay="1"] {
+  transition-delay: 0.1s;
+}
+
+[data-reveal][data-delay="2"] {
+  transition-delay: 0.2s;
+}
+
+[data-reveal][data-delay="3"] {
+  transition-delay: 0.3s;
+}
+
+[data-reveal][data-delay="4"] {
+  transition-delay: 0.4s;
+}
+
+[data-reveal][data-delay="5"] {
+  transition-delay: 0.5s;
+}
+
+.treatment-card {
+  transition: transform 0.45s ease, box-shadow 0.45s ease;
+}
+
+.treatment-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 28px 80px rgba(62, 74, 61, 0.16);
+}
+
+.treatment-card .price-value {
+  display: inline-block;
+  transition: transform 0.35s ease;
+}
+
+.treatment-card:hover .price-value {
+  transform: scale(1.08);
+}
+
+.parallax-layer {
+  will-change: transform;
 }
 
 .duration-chip:hover,
@@ -68,4 +178,26 @@ body.nav-open .menu-toggle span:nth-child(3) {
 
 body.nav-open .mobile-nav {
   display: flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .ken-burns,
+  [data-reveal],
+  .treatment-card,
+  .treatment-card .price-value,
+  .logo img,
+  .nav-bar,
+  .parallax-layer {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+  }
 }

@@ -9,45 +9,65 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Heebo:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3e4a3d",
+              sage: "#dce2d8",
+              cream: "#faf8f5",
+              ink: "#2c332b",
+              muted: "#5a6158",
+            },
+            fontFamily: {
+              sans: ["Heebo", "system-ui", "sans-serif"],
+              display: ["Frank Ruhl Libre", "Heebo", "serif"],
+            },
+          },
+        },
+      };
+    </script>
     <link rel="stylesheet" href="css/styles.css" />
   </head>
-  <body>
-    <header class="site-header">
-      <div class="container header-inner">
-        <a class="logo" href="index.html">
-          <img src="assets/images/ShimriTouch.svg" alt="ShimriTouch" />
-          <span class="logo-sub">
+  <body class="bg-cream font-sans text-ink antialiased leading-relaxed">
+    <header class="sticky top-0 z-50 px-3 pt-3">
+      <div class="glass-nav mx-auto flex h-[84px] w-[min(100%,1180px)] items-center justify-between gap-3 rounded-[28px] border border-white/50 px-4">
+        <a class="logo flex min-w-0 items-center gap-2.5" href="index.html">
+          <img class="h-12 w-auto shrink-0 sm:h-16" src="assets/images/ShimriTouch.svg" alt="ShimriTouch" />
+          <span class="flex flex-col gap-0.5 text-[0.7rem] font-medium leading-tight text-muted sm:text-[0.8rem]">
             <span>שמרית בן שימול</span>
             <span>עיסויים וטיפולי גוף</span>
           </span>
         </a>
-        <a class="btn btn-primary btn-header" href="index.html">חזרה לאתר</a>
+        <a class="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-white" href="index.html">חזרה לאתר</a>
       </div>
     </header>
 
-    <main class="page-main">
-      <div class="container bento-card" style="max-width: 720px">
-        <h1>פוליסת פרטיות</h1>
-        <p>עודכן לאחרונה: אוגוסט 2026</p>
-        <p>
+    <main class="px-4 py-12 md:py-16">
+      <div class="glass-sheet mx-auto max-w-xl rounded-[32px] p-7 md:p-9">
+        <h1 class="font-display mb-3 text-3xl font-bold text-primary">פוליסת פרטיות</h1>
+        <p class="mb-4 text-muted">עודכן לאחרונה: אוגוסט 2026</p>
+        <p class="mb-4">
           ShimriTouch (שמרית בן שימול) מכבדת את פרטיות המטופלות. מידע שנמסר דרך האתר, הטלפון או הוואטסאפ משמש אך ורק
           לצורך תיאום טיפולים, מענה לפניות ומתן השירות.
         </p>
-        <h2>איזה מידע נאסף</h2>
-        <p>שם, מספר טלפון, העדפת טיפול והודעה חופשית — לפי מה שתבחרי למסור בטופס או בשיחה.</p>
-        <h2>שימוש במידע</h2>
-        <p>המידע אינו נמכר לצדדים שלישיים. הוא נשמר לצורך תיאום, יצירת קשר ומעקב טיפולי בסיסי בלבד.</p>
-        <h2>וואטסאפ וטלפון</h2>
-        <p>
+        <h2 class="font-display mb-2 mt-6 text-xl font-bold text-primary">איזה מידע נאסף</h2>
+        <p class="mb-4">שם, מספר טלפון, העדפת טיפול והודעה חופשית — לפי מה שתבחרי למסור בטופס או בשיחה.</p>
+        <h2 class="font-display mb-2 mt-6 text-xl font-bold text-primary">שימוש במידע</h2>
+        <p class="mb-4">המידע אינו נמכר לצדדים שלישיים. הוא נשמר לצורך תיאום, יצירת קשר ומעקב טיפולי בסיסי בלבד.</p>
+        <h2 class="font-display mb-2 mt-6 text-xl font-bold text-primary">וואטסאפ וטלפון</h2>
+        <p class="mb-4">
           לחיצה על כפתורי הוואטסאפ מעבירה אותך ליישום של Meta/WhatsApp. השימוש שם כפוף למדיניות הפרטיות של השירות
           החיצוני.
         </p>
-        <h2>יצירת קשר</h2>
-        <p>לשאלות בנושא פרטיות: <a href="tel:0544459600">054-4459600</a></p>
-        <p><a href="index.html">חזרה לדף הבית</a></p>
+        <h2 class="font-display mb-2 mt-6 text-xl font-bold text-primary">יצירת קשר</h2>
+        <p class="mb-4">לשאלות בנושא פרטיות: <a class="font-bold text-primary" href="tel:0544459600">054-4459600</a></p>
+        <p><a class="font-bold text-primary" href="index.html">חזרה לדף הבית</a></p>
       </div>
     </main>
   </body>

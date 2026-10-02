@@ -1,0 +1,149 @@
+.voucher-page {
+  min-height: 100svh;
+  background: #f4f2ed;
+}
+
+.voucher-shell {
+  width: min(100% - 1.5rem, 720px);
+  margin: 1.5rem auto 3rem;
+}
+
+.voucher-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #f7f4ee url("/assets/images/voucher-bg.jpg") center/cover no-repeat;
+  color: #3e4a3d;
+  box-shadow: 0 24px 70px rgba(62, 74, 61, 0.14);
+  min-height: 460px;
+}
+
+.voucher-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(247, 244, 238, 0.78), rgba(247, 244, 238, 0.92));
+}
+
+.voucher-inner {
+  position: relative;
+  z-index: 1;
+  padding: 1.6rem 1.4rem 1.8rem;
+  text-align: center;
+}
+
+.voucher-logo {
+  height: 72px;
+  width: auto;
+  margin: 0 auto 0.6rem;
+}
+
+.voucher-kicker {
+  font-family: "Frank Ruhl Libre", serif;
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  font-weight: 700;
+  color: #5b6b58;
+  margin-bottom: 0.4rem;
+}
+
+.voucher-recipient {
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+  font-weight: 800;
+  margin: 0.2rem 0 0.9rem;
+}
+
+.voucher-message,
+.voucher-duration,
+.voucher-sender,
+.voucher-code,
+.voucher-contact {
+  white-space: pre-line;
+  line-height: 1.7;
+}
+
+.voucher-message,
+.voucher-duration {
+  font-size: 1.12rem;
+  margin-bottom: 0.7rem;
+}
+
+.voucher-sender {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0.4rem 0 1.3rem;
+}
+
+.voucher-code-label {
+  font-weight: 700;
+}
+
+.voucher-code-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin: 0.15rem 0 1rem;
+}
+
+.voucher-brand {
+  font-family: "Frank Ruhl Libre", serif;
+  font-size: 1.4rem;
+  color: #6d7a78;
+  margin-top: 0.8rem;
+}
+
+.voucher-expiry {
+  margin-top: 0.8rem;
+  font-size: 0.92rem;
+}
+
+.voucher-stamp {
+  display: none;
+  margin: 0.8rem auto 0;
+  width: fit-content;
+  transform: rotate(-8deg);
+  border: 3px solid #8a2f2f;
+  color: #8a2f2f;
+  font-weight: 800;
+  padding: 0.35rem 0.9rem;
+  border-radius: 8px;
+  letter-spacing: 0.08em;
+}
+
+.voucher-card.is-redeemed .voucher-stamp {
+  display: block;
+}
+
+.gate-card,
+.miniapp-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 28px;
+  padding: 1.4rem;
+  box-shadow: 0 18px 50px rgba(62, 74, 61, 0.1);
+}
+
+.field-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.field-grid input,
+.field-grid textarea,
+.field-grid select {
+  width: 100%;
+  border: 1px solid #dce2d8;
+  border-radius: 16px;
+  background: #fff;
+  padding: 0.85rem 1rem;
+  font: inherit;
+}
+
+.miniapp-actions {
+  display: flex;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.miniapp-actions button {
+  flex: 1;
+}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>שובר דיגיטלי | ShimriTouch</title>
+    <link rel="icon" href="/assets/images/ShimriTouch.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Heebo:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#3e4a3d", cream: "#faf8f5", ink: "#2c332b" },
+            fontFamily: { sans: ["Heebo", "system-ui", "sans-serif"], display: ["Frank Ruhl Libre", "Heebo", "serif"] },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/voucher.css" />
+  </head>
+  <body class="voucher-page font-sans text-ink">
+    <header class="site-header sticky top-0 z-50 px-3 pt-3">
+      <div class="nav-bar mx-auto flex w-[min(100%,1180px)] items-center justify-between gap-3 rounded-full border border-white/40 px-4">
+        <a class="logo flex items-center gap-2.5" href="/index.html">
+          <img src="/assets/images/ShimriTouch.svg" alt="ShimriTouch" />
+        </a>
+        <a class="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-white" href="/index.html">חזרה לאתר</a>
+      </div>
+    </header>
+    <main class="voucher-shell">
+      <section id="gate" class="gate-card">
+        <h1 class="font-display mb-2 text-2xl font-bold text-primary">שובר דיגיטלי</h1>
+        <p class="mb-4 text-sm">להצגת השובר הזיני את מספר הנייד של הרוכשת או של מקבלת השובר.</p>
+        <form id="unlock-form" class="field-grid" novalidate>
+          <label>
+            <span class="mb-1 block text-sm font-semibold">מספר נייד</span>
+            <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="054-0000000" />
+          </label>
+          <button class="rounded-full bg-primary px-5 py-3 font-semibold text-white" type="submit">הציגי שובר</button>
+          <p id="gate-error" class="min-h-[1.2em] text-sm text-red-700" role="alert"></p>
+        </form>
+      </section>
+      <section id="voucher-view" class="hidden"></section>
+    </main>
+    <script src="/js/voucher-card.js"></script>
+    <script src="/js/voucher-page.js"></script>
+  </body>
+</html>

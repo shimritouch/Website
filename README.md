@@ -10,9 +10,9 @@
 npx --yes serve .
 ```
 
-## GitHub Pages
+## אירוח
 
-האתר סטטי ומוכן ל-Pages משורש המאגר (`index.html` בשורש). הדומיין המותאם הוא `https://shimritouch.co.il/` (קובץ `CNAME` בשורש). האחסון נשאר ב-GitHub Pages; Box מנהל רק את ה-DNS.
+האתר סטטי. GitHub דוחף ל-Netlify (`Deploys from GitHub`). הדומיין המותאם הוא `https://shimritouch.co.il/`. Box מנהל רק את ה-DNS ומפנה ל-Netlify, לא ל-GitHub Pages.
 
 ## תמונות
 

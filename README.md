@@ -12,7 +12,7 @@ npx --yes serve .
 
 ## GitHub Pages
 
-האתר סטטי ומוכן ל-Pages משורש המאגר (`index.html` בשורש). כשיהיה מאגר ייעודי לפרויקט הזה — חברי `origin` אליו בלבד, ואז הפעילי Pages על ענף `main`.
+האתר סטטי ומוכן ל-Pages משורש המאגר (`index.html` בשורש). הדומיין המותאם הוא `https://shimritouch.co.il/` (קובץ `CNAME` בשורש). האחסון נשאר ב-GitHub Pages; Box מנהל רק את ה-DNS.
 
 ## תמונות
 

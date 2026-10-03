@@ -100,7 +100,7 @@ exports.handler = async function (event) {
       var unlockCode = path.split("/")[2];
       var unlocked = await storeApi.withStore(function (store) {
         return logic.unlockVoucher(store, unlockCode, body.phone);
-      });
+      }, event);
       return json(200, { voucher: unlocked });
     }
 
@@ -111,21 +111,21 @@ exports.handler = async function (event) {
     if (method === "GET" && path === "/vouchers/next-code") {
       var next = await storeApi.withStore(function (store) {
         return { voucher_code: String(logic.nextCodeFromStore(store)), expiry_date: logic.todayExpiry() };
-      });
+      }, event);
       return json(200, next);
     }
 
     if (method === "POST" && path === "/vouchers/preview") {
       var preview = await storeApi.withStore(function (store) {
         return logic.previewVoucher(store, body);
-      });
+      }, event);
       return json(200, { voucher: preview });
     }
 
     if (method === "POST" && path === "/vouchers") {
       var issued = await storeApi.withStore(function (store) {
         return logic.issueVoucher(store, body);
-      });
+      }, event);
       return json(201, {
         voucher: issued,
         url: "https://shimritouch.co.il/voucher/" + issued.voucher_code,
@@ -136,7 +136,7 @@ exports.handler = async function (event) {
       var status = (event.queryStringParameters && event.queryStringParameters.status) || "active";
       var list = await storeApi.withStore(function (store) {
         return logic.listVouchers(store, status);
-      });
+      }, event);
       return json(200, { vouchers: list });
     }
 
@@ -144,7 +144,7 @@ exports.handler = async function (event) {
       var redeemCode = path.split("/")[2];
       var redeemed = await storeApi.withStore(function (store) {
         return logic.redeemVoucher(store, redeemCode);
-      });
+      }, event);
       return json(200, { voucher: redeemed });
     }
 
@@ -158,7 +158,7 @@ exports.handler = async function (event) {
           package_title: parsed.title,
           total_treatments: parsed.total,
         });
-      });
+      }, event);
       return json(201, { created: true, package: pkg });
     }
 
@@ -168,7 +168,7 @@ exports.handler = async function (event) {
         return logic.listPackages(store, pStatus).map(function (pkg) {
           return Object.assign({}, pkg, { status: logic.packageStatus(pkg) });
         });
-      });
+      }, event);
       return json(200, { packages: packages });
     }
 
@@ -176,12 +176,16 @@ exports.handler = async function (event) {
       var parts = path.split("/");
       var updated = await storeApi.withStore(function (store) {
         return logic.redeemTreatment(store, parts[2], parts[4]);
-      });
+      }, event);
       return json(200, { package: updated, status: logic.packageStatus(updated) });
     }
 
     return json(404, { error: "not found" });
   } catch (err) {
-    return json(400, { error: err.message || "שגיאה" });
+    var message = (err && err.message) || "שגיאה";
+    if (/ENOENT|Blobs|חסר מודול|MissingBlobs|connectLambda/i.test(message)) {
+      return json(500, { error: "שמירת השוברים נכשלה. נסו שוב בעוד רגע." });
+    }
+    return json(400, { error: message });
   }
 };

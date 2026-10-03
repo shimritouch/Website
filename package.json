@@ -1,0 +1,10 @@
+{
+  "name": "shimritouch-website",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.cjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.3"
+  }
+}

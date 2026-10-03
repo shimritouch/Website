@@ -3,6 +3,7 @@
 var logic = require("./lib/logic");
 var storeApi = require("./lib/store");
 var telegramAuth = require("./lib/telegram-auth");
+var voucherImage = require("./lib/voucher-image");
 
 var CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -97,6 +98,29 @@ exports.handler = async function (event) {
       });
     }
 
+    if (method === "GET" && /^\/vouchers\/[^/]+\/image$/.test(path)) {
+      var imageCode = decodeURIComponent(path.split("/")[2]);
+      var png = await storeApi.withStore(function (store) {
+        var voucher = store.vouchers[String(imageCode)];
+        if (!voucher) {
+          var missing = new Error("שובר לא נמצא");
+          missing.statusCode = 404;
+          throw missing;
+        }
+        return voucherImage.renderVoucherPng(voucher);
+      }, event);
+      return {
+        statusCode: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "image/png",
+          "Cache-Control": "private, no-store",
+        },
+        isBase64Encoded: true,
+        body: Buffer.from(png).toString("base64"),
+      };
+    }
+
     if (method === "GET" && path === "/vouchers") {
       var status = (event.queryStringParameters && event.queryStringParameters.status) || "active";
       var list = await storeApi.withStore(function (store) {
@@ -156,6 +180,7 @@ exports.handler = async function (event) {
     return json(404, { error: "not found" });
   } catch (err) {
     var message = (err && err.message) || "שגיאה";
+    if (err && err.statusCode === 404) return json(404, { error: message });
     if (/ENOENT|Blobs|חסר מודול|MissingBlobs|connectLambda/i.test(message)) {
       return json(500, { error: "שמירת השוברים נכשלה. נסו שוב בעוד רגע." });
     }

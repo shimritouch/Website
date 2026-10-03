@@ -21,7 +21,9 @@
       ? "נוצל בתאריך " + escapeHtml(data.redeemed_date || "")
       : cancelled
         ? "בוטל בתאריך " + escapeHtml(data.cancelled_date || "")
-        : "השובר תקף עד ל-" + escapeHtml(data.expiry_date || "") + "<br />(ע״ב מקום פנוי)";
+        : "השובר תקף עד ל-" +
+          escapeHtml(data.expiry_date || "") +
+          '<span class="voucher-expiry-note">(ע״ב מקום פנוי)</span>';
     var stamp = redeemed
       ? '<div class="voucher-stamp">נוצל</div>'
       : cancelled

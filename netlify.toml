@@ -4,7 +4,8 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["@netlify/blobs"]
+  external_node_modules = ["@netlify/blobs", "@resvg/resvg-js"]
+  included_files = ["assets/images/voucher-bg.jpg", "assets/images/ShimriTouch.svg", "netlify/functions/fonts/*.ttf"]
 
 [[redirects]]
   from = "/api/*"

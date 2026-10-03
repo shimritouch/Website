@@ -114,7 +114,7 @@ function buildVoucherSvg(voucher) {
         : ["השובר תקף עד ל-" + (voucher.expiry_date || ""), "(ע״ב מקום פנוי)"];
   expiryLines.forEach(function (line, index) {
     parts.push(
-      text(850, 676 + index * 32, line, { family: "Heebo", size: 25, weight: 500, fill: "#243026" })
+      text(850, 680 + index * 28, line, { family: "Heebo", size: 22, weight: 500, fill: "#243026" })
     );
   });
   parts.push(text(512, 700, "ShimriTouch", { family: "Suez One", size: 38, weight: 400, fill: "#8d9794" }));

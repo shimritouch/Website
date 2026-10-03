@@ -9,23 +9,30 @@
       .replace(/"/g, "&quot;");
   }
 
+  function recipientLine(name) {
+    var clean = String(name || "").trim().replace(/^ל[\s\u200f]*/, "");
+    return "ל" + escapeHtml(clean);
+  }
+
   function renderVoucherCard(data, options) {
     var redeemed = data.status === "redeemed";
     var expiry = redeemed
       ? "נוצל בתאריך " + escapeHtml(data.redeemed_date || "")
-      : "השובר תקף עד ל-" + escapeHtml(data.expiry_date || "") + "\n(ע״ב מקום פנוי)";
+      : "השובר תקף עד ל-" + escapeHtml(data.expiry_date || "") + "<br />(ע״ב מקום פנוי)";
     var stamp = redeemed ? '<div class="voucher-stamp">נוצל</div>' : "";
     var logo = (options && options.logoSrc) || "/assets/images/ShimriTouch.svg";
     return (
       '<article class="voucher-card' +
       (redeemed ? " is-redeemed" : "") +
       '"><div class="voucher-inner">' +
+      '<header class="voucher-head">' +
       '<img class="voucher-logo" src="' +
       logo +
       '" alt="ShimriTouch" />' +
       '<h1 class="voucher-kicker">שובר עיסוי ב ShimriTouch</h1>' +
-      '<p class="voucher-recipient">ל' +
-      escapeHtml(data.recipient_name || "") +
+      "</header>" +
+      '<p class="voucher-recipient">' +
+      recipientLine(data.recipient_name) +
       "</p>" +
       '<p class="voucher-message">' +
       escapeHtml(data.message || "") +
@@ -41,10 +48,12 @@
       escapeHtml(data.voucher_code || "") +
       "</p>" +
       '<p class="voucher-contact">יש לתאם מראש תאריך ושעת הגעה<br />שמרית 054-4459600</p>' +
-      '<p class="voucher-brand">ShimriTouch</p>' +
+      '<footer class="voucher-foot">' +
       '<p class="voucher-expiry">' +
       expiry +
       "</p>" +
+      '<p class="voucher-brand">ShimriTouch</p>' +
+      "</footer>" +
       stamp +
       "</div></article>"
     );

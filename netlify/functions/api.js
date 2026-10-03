@@ -1,8 +1,8 @@
 "use strict";
 
-var crypto = require("crypto");
 var logic = require("./lib/logic");
 var storeApi = require("./lib/store");
+var telegramAuth = require("./lib/telegram-auth");
 
 var CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -32,54 +32,11 @@ function normalizePath(event) {
   return raw.replace(/\/+$/, "") || "/";
 }
 
-function allowedIds() {
-  return String(process.env.ALLOWED_TELEGRAM_IDS || process.env.ALLOWED_CHAT_IDS || "")
-    .split(",")
-    .map(function (x) {
-      return x.trim();
-    })
-    .filter(Boolean);
-}
-
-function validateTelegramInitData(initData) {
-  var token = process.env.TELEGRAM_BOT_TOKEN || "";
-  if (!token || !initData) return null;
-  var params = new URLSearchParams(initData);
-  var hash = params.get("hash");
-  if (!hash) return null;
-  params.delete("hash");
-  var pairs = [];
-  params.forEach(function (value, key) {
-    pairs.push(key + "=" + value);
+function denyAdmin(auth) {
+  return json(401, {
+    error: "אין הרשאת ניהול (" + auth.reason + ")",
+    reason: auth.reason,
   });
-  pairs.sort();
-  var dataCheck = pairs.join("\n");
-  var secret = crypto.createHmac("sha256", "WebAppData").update(token).digest();
-  var check = crypto.createHmac("sha256", secret).update(dataCheck).digest("hex");
-  if (check !== hash) return null;
-  var userRaw = params.get("user");
-  if (!userRaw) return null;
-  try {
-    return JSON.parse(userRaw);
-  } catch (err) {
-    return null;
-  }
-}
-
-function isAdmin(event) {
-  var auth = event.headers.authorization || event.headers.Authorization || "";
-  var apiKey = process.env.VOUCHER_API_KEY || "";
-  if (apiKey && auth === "Bearer " + apiKey) return true;
-
-  var initData =
-    event.headers["x-telegram-init-data"] ||
-    event.headers["X-Telegram-Init-Data"] ||
-    "";
-  var user = validateTelegramInitData(initData);
-  if (!user || !user.id) return false;
-  var allowed = allowedIds();
-  if (!allowed.length) return false;
-  return allowed.indexOf(String(user.id)) !== -1;
 }
 
 exports.handler = async function (event) {
@@ -104,8 +61,9 @@ exports.handler = async function (event) {
       return json(200, { voucher: unlocked });
     }
 
-    if (!isAdmin(event)) {
-      return json(401, { error: "אין הרשאת ניהול" });
+    var admin = telegramAuth.inspectAdmin(event, body);
+    if (!admin.ok) {
+      return denyAdmin(admin);
     }
 
     if (method === "GET" && path === "/vouchers/next-code") {

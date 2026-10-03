@@ -23,7 +23,7 @@
 
   function formFields() {
     var data = new FormData(form);
-    return {
+    var fields = {
       recipient_name: data.get("recipient_name"),
       message: data.get("message"),
       duration: data.get("duration"),
@@ -31,11 +31,17 @@
       buyer_phone: data.get("buyer_phone"),
       recipient_phone: data.get("recipient_phone"),
     };
+    if (tg && tg.initData) fields.init_data = tg.initData;
+    return fields;
   }
 
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     formError.textContent = "";
+    if (!tg || !tg.initData) {
+      formError.textContent = "אין הרשאת ניהול (missing_init)";
+      return;
+    }
     fetch("/api/vouchers/preview", { method: "POST", headers: headers(), body: JSON.stringify(formFields()) })
       .then(function (res) {
         return res.json().then(function (data) {

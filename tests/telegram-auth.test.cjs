@@ -54,3 +54,15 @@ test("reports a precise reason for each admin failure", function () {
   var otherUser = signedInitData("test-token", { id: 999, first_name: "Other" });
   assert.equal(auth.inspectAdmin({ headers: {} }, { init_data: otherUser }).reason, "unknown_user");
 });
+
+test("accepts a signed webapp auth query when initData is missing", function () {
+  process.env.TELEGRAM_BOT_TOKEN = "test-token";
+  process.env.ALLOWED_TELEGRAM_IDS = "244510989";
+  process.env.VOUCHER_API_KEY = "api-key";
+  var exp = Math.floor(Date.now() / 1000) + 600;
+  var payload = "244510989." + exp;
+  var sig = crypto.createHmac("sha256", "api-key").update(payload).digest("hex");
+  var result = auth.inspectAdmin({ headers: {} }, { webapp_auth: payload + "." + sig });
+  assert.equal(result.ok, true);
+  assert.equal(result.reason, "webapp_auth");
+});

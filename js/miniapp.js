@@ -7,6 +7,20 @@
     tg.expand();
   }
 
+  function telegramInitData() {
+    if (tg && tg.initData) return tg.initData;
+    if (window.__tgInitData) return window.__tgInitData;
+    try {
+      return sessionStorage.getItem("tg_init_data") || "";
+    } catch (err) {
+      return "";
+    }
+  }
+
+  function webappAuth() {
+    return new URLSearchParams(location.search).get("auth") || "";
+  }
+
   var form = document.getElementById("voucher-form");
   var formStep = document.getElementById("form-step");
   var previewStep = document.getElementById("preview-step");
@@ -17,7 +31,8 @@
 
   function headers() {
     var h = { "Content-Type": "application/json" };
-    if (tg && tg.initData) h["X-Telegram-Init-Data"] = tg.initData;
+    var initData = telegramInitData();
+    if (initData) h["X-Telegram-Init-Data"] = initData;
     return h;
   }
 
@@ -31,14 +46,17 @@
       buyer_phone: data.get("buyer_phone"),
       recipient_phone: data.get("recipient_phone"),
     };
-    if (tg && tg.initData) fields.init_data = tg.initData;
+    var initData = telegramInitData();
+    var signed = webappAuth();
+    if (initData) fields.init_data = initData;
+    if (signed) fields.webapp_auth = signed;
     return fields;
   }
 
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     formError.textContent = "";
-    if (!tg || !tg.initData) {
+    if (!telegramInitData() && !webappAuth()) {
       formError.textContent = "אין הרשאת ניהול (missing_init)";
       return;
     }

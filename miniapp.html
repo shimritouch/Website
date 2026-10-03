@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>הפקת שובר | ShimriTouch</title>
+    <script>
+      (function () {
+        var hash = location.hash || "";
+        var params = new URLSearchParams(hash.charAt(0) === "#" ? hash.slice(1) : hash);
+        var data = params.get("tgWebAppData") || "";
+        if (!data) {
+          data = new URLSearchParams(location.search).get("tgWebAppData") || "";
+        }
+        window.__tgInitData = data;
+        if (data) {
+          try {
+            sessionStorage.setItem("tg_init_data", data);
+          } catch (err) {}
+        }
+      })();
+    </script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="icon" href="assets/images/ShimriTouch.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

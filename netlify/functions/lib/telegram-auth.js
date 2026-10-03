@@ -63,6 +63,45 @@ function validateInitData(initData, token) {
   return { ok: true, user: user };
 }
 
+function safeEqualHex(left, right) {
+  try {
+    var a = Buffer.from(String(left), "hex");
+    var b = Buffer.from(String(right), "hex");
+    if (!a.length || a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch (err) {
+    return false;
+  }
+}
+
+function readWebAppAuth(event, body) {
+  var source = body || {};
+  var fromBody = String(source.webapp_auth || source.auth || "");
+  if (fromBody) return fromBody;
+  var query = (event && event.queryStringParameters) || {};
+  return String(query.auth || query.webapp_auth || "");
+}
+
+function inspectWebAppAuth(raw) {
+  var key = String(process.env.VOUCHER_API_KEY || "").trim();
+  if (!raw) return { ok: false, reason: "missing_init" };
+  if (!key) return { ok: false, reason: "no_token" };
+  var parts = String(raw).split(".");
+  if (parts.length !== 3) return { ok: false, reason: "bad_hash" };
+  var userId = parts[0];
+  var exp = parseInt(parts[1], 10);
+  var sig = parts[2];
+  if (!userId || !exp) return { ok: false, reason: "bad_hash" };
+  if (Math.floor(Date.now() / 1000) > exp) return { ok: false, reason: "unknown_user" };
+  var expected = crypto.createHmac("sha256", key).update(userId + "." + exp).digest("hex");
+  if (!safeEqualHex(sig, expected)) return { ok: false, reason: "bad_hash" };
+  var allowed = allowedIds();
+  if (!allowed.length || allowed.indexOf(String(userId)) === -1) {
+    return { ok: false, reason: "unknown_user" };
+  }
+  return { ok: true, reason: "webapp_auth", user: { id: userId } };
+}
+
 function inspectAdmin(event, body) {
   var auth = header(event, "authorization");
   var apiKey = String(process.env.VOUCHER_API_KEY || "").trim();
@@ -72,22 +111,26 @@ function inspectAdmin(event, body) {
 
   var initData = readInitData(event, body);
   var token = botToken();
-  if (!initData) return { ok: false, reason: "missing_init" };
-  if (!token) return { ok: false, reason: "no_token" };
-
-  var checked = validateInitData(initData, token);
-  if (!checked.ok) return { ok: false, reason: checked.reason };
-
-  var allowed = allowedIds();
-  if (!allowed.length || allowed.indexOf(String(checked.user.id)) === -1) {
-    return { ok: false, reason: "unknown_user" };
+  if (initData) {
+    if (!token) return { ok: false, reason: "no_token" };
+    var checked = validateInitData(initData, token);
+    if (!checked.ok) return { ok: false, reason: checked.reason };
+    var allowed = allowedIds();
+    if (!allowed.length || allowed.indexOf(String(checked.user.id)) === -1) {
+      return { ok: false, reason: "unknown_user" };
+    }
+    return { ok: true, reason: "telegram", user: checked.user };
   }
-  return { ok: true, reason: "telegram", user: checked.user };
+
+  var signed = inspectWebAppAuth(readWebAppAuth(event, body));
+  if (signed.ok || signed.reason !== "missing_init") return signed;
+  return { ok: false, reason: "missing_init" };
 }
 
 module.exports = {
   header: header,
   readInitData: readInitData,
   validateInitData: validateInitData,
+  inspectWebAppAuth: inspectWebAppAuth,
   inspectAdmin: inspectAdmin,
 };

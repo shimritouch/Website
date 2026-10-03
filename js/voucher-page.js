@@ -44,7 +44,7 @@
           window.ShimriVoucher.renderVoucherCard(voucher) +
           '<div class="voucher-download"><button id="download-voucher" class="rounded-full bg-primary px-5 py-3 font-semibold text-white" type="button">הורדה</button></div>';
         document.getElementById("download-voucher").addEventListener("click", function () {
-          downloadCard(voucher.voucher_code);
+          downloadCard(voucher.voucher_code, phone);
         });
       })
       .catch(function (err) {
@@ -52,26 +52,33 @@
       });
   });
 
-  function downloadCard(voucherCode) {
+  function downloadCard(voucherCode, phone) {
     var button = document.getElementById("download-voucher");
-    var card = view.querySelector(".voucher-card");
-    if (!card || !window.htmlToImage) {
-      downloadError.textContent = "לא ניתן להוריד את השובר כרגע";
-      downloadError.classList.remove("hidden");
-      return;
-    }
     button.disabled = true;
     downloadError.classList.add("hidden");
-    window.htmlToImage
-      .toPng(card, { pixelRatio: 2, cacheBust: true })
-      .then(function (dataUrl) {
+    fetch("/api/vouchers/" + encodeURIComponent(voucherCode) + "/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: phone }),
+    })
+      .then(function (res) {
+        if (!res.ok) {
+          return res.json().then(function (data) {
+            throw new Error(data.error || "ההורדה נכשלה");
+          });
+        }
+        return res.blob();
+      })
+      .then(function (blob) {
+        var url = URL.createObjectURL(blob);
         var link = document.createElement("a");
-        link.href = dataUrl;
+        link.href = url;
         link.download = "shimritouch-voucher-" + voucherCode + ".png";
         link.click();
+        URL.revokeObjectURL(url);
       })
-      .catch(function () {
-        downloadError.textContent = "ההורדה נכשלה. נסו שוב.";
+      .catch(function (err) {
+        downloadError.textContent = err.message || "ההורדה נכשלה. נסו שוב.";
         downloadError.classList.remove("hidden");
       })
       .then(function () {

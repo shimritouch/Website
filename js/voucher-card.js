@@ -25,9 +25,13 @@
           escapeHtml(data.expiry_date || "") +
           '<span class="voucher-expiry-note">(ע״ב מקום פנוי)</span>';
     var stamp = redeemed
-      ? '<div class="voucher-stamp">נוצל</div>'
+      ? '<div class="voucher-stamp" aria-hidden="true"><span class="voucher-stamp-title">שובר מומש</span>' +
+        (data.redeemed_date
+          ? '<span class="voucher-stamp-date">' + escapeHtml(data.redeemed_date) + "</span>"
+          : "") +
+        "</div>"
       : cancelled
-        ? '<div class="voucher-stamp">בוטל</div>'
+        ? '<div class="voucher-stamp" aria-hidden="true"><span class="voucher-stamp-title">שובר בוטל</span></div>'
         : "";
     var logo = (options && options.logoSrc) || "/assets/images/ShimriTouch.svg";
     var stateClass = redeemed ? " is-redeemed" : cancelled ? " is-cancelled" : "";

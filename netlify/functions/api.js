@@ -33,6 +33,19 @@ function normalizePath(event) {
   return raw.replace(/\/+$/, "") || "/";
 }
 
+function pngResponse(png) {
+  return {
+    statusCode: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "image/png",
+      "Cache-Control": "private, no-store",
+    },
+    isBase64Encoded: true,
+    body: Buffer.from(png).toString("base64"),
+  };
+}
+
 function denyAdmin(auth) {
   return json(401, {
     error: "אין הרשאת ניהול (" + auth.reason + ")",
@@ -52,6 +65,15 @@ exports.handler = async function (event) {
   try {
     if (method === "GET" && path === "/health") {
       return json(200, { ok: true });
+    }
+
+    if (method === "POST" && /^\/vouchers\/[^/]+\/download$/.test(path)) {
+      var downloadCode = decodeURIComponent(path.split("/")[2]);
+      var downloaded = await storeApi.withStore(function (store) {
+        logic.unlockVoucher(store, downloadCode, body.phone);
+        return voucherImage.renderVoucherPng(store.vouchers[String(downloadCode)]);
+      }, event);
+      return pngResponse(downloaded);
     }
 
     if (method === "POST" && /^\/vouchers\/[^/]+\/unlock$/.test(path)) {
@@ -109,16 +131,7 @@ exports.handler = async function (event) {
         }
         return voucherImage.renderVoucherPng(voucher);
       }, event);
-      return {
-        statusCode: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Content-Type": "image/png",
-          "Cache-Control": "private, no-store",
-        },
-        isBase64Encoded: true,
-        body: Buffer.from(png).toString("base64"),
-      };
+      return pngResponse(png);
     }
 
     if (method === "GET" && path === "/vouchers") {

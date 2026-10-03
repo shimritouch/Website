@@ -40,6 +40,51 @@ test("issue then redeem voucher", function () {
   assert.equal(store.vouchers["400131"].status, "redeemed");
 });
 
+function sampleIssue(store) {
+  return logic.issueVoucher(store, {
+    recipient_name: "ספיר",
+    message: "ברכה",
+    duration: 60,
+    sender_name: "לולו",
+    buyer_phone: "0544459600",
+  });
+}
+
+test("cancel moves a voucher out of the active list", function () {
+  var store = { nextCode: 400131, vouchers: {}, packages: {} };
+  sampleIssue(store);
+  assert.equal(logic.nextCodeFromStore(store), 400132);
+  logic.cancelVoucher(store, "400131");
+  assert.equal(logic.listVouchers(store, "active").length, 0);
+  assert.equal(logic.listVouchers(store, "cancelled")[0].voucher_code, "400131");
+  assert.equal(logic.nextCodeFromStore(store), 400132);
+});
+
+test("reissuing a cancelled code replaces that voucher", function () {
+  var store = { nextCode: 400131, vouchers: {}, packages: {} };
+  sampleIssue(store);
+  logic.cancelVoucher(store, "400131");
+  logic.setNextCode(store, "400131");
+  var again = sampleIssue(store);
+  assert.equal(again.voucher_code, "400131");
+  assert.equal(again.status, "active");
+  assert.equal(logic.listVouchers(store, "cancelled").length, 0);
+  assert.equal(logic.listVouchers(store, "active").length, 1);
+  assert.equal(logic.nextCodeFromStore(store), 400132);
+});
+
+test("cannot restart from an active or redeemed code", function () {
+  var store = { nextCode: 400131, vouchers: {}, packages: {} };
+  sampleIssue(store);
+  assert.throws(function () {
+    logic.setNextCode(store, "400131");
+  }, /בשימוש/);
+  logic.redeemVoucher(store, "400131");
+  assert.throws(function () {
+    logic.setNextCode(store, "400131");
+  }, /בשימוש/);
+});
+
 test("series note creates package slots", function () {
   var parsed = logic.parseSeriesNote("עיסוי רפואי - סדרה 4 טיפולים");
   assert.equal(parsed.total, 4);

@@ -66,6 +66,13 @@ exports.handler = async function (event) {
       return denyAdmin(admin);
     }
 
+    if (method === "POST" && path === "/vouchers/next-code") {
+      var saved = await storeApi.withStore(function (store) {
+        return logic.setNextCode(store, body.next_code);
+      }, event);
+      return json(200, saved);
+    }
+
     if (method === "GET" && path === "/vouchers/next-code") {
       var next = await storeApi.withStore(function (store) {
         return { voucher_code: String(logic.nextCodeFromStore(store)), expiry_date: logic.todayExpiry() };
@@ -96,6 +103,14 @@ exports.handler = async function (event) {
         return logic.listVouchers(store, status);
       }, event);
       return json(200, { vouchers: list });
+    }
+
+    if (method === "POST" && /^\/vouchers\/[^/]+\/cancel$/.test(path)) {
+      var cancelCode = path.split("/")[2];
+      var cancelled = await storeApi.withStore(function (store) {
+        return logic.cancelVoucher(store, cancelCode);
+      }, event);
+      return json(200, { voucher: cancelled });
     }
 
     if (method === "POST" && /^\/vouchers\/[^/]+\/redeem$/.test(path)) {

@@ -54,16 +54,30 @@ function parseSeriesNote(note) {
   return { title: text, total: total };
 }
 
+function codeInUse(voucher) {
+  return Boolean(voucher) && voucher.status !== "cancelled";
+}
+
+function nextFreeCode(store, start) {
+  var n = start;
+  while (codeInUse(store.vouchers[String(n)])) n += 1;
+  return n;
+}
+
 function nextCodeFromStore(store) {
-  var maxIssued = STARTING_CODE - 1;
-  Object.keys(store.vouchers || {}).forEach(function (code) {
-    var n = parseInt(code, 10);
-    if (n > maxIssued) maxIssued = n;
-  });
-  if (store.nextCode && store.nextCode > maxIssued + 1) {
-    return store.nextCode;
-  }
-  return maxIssued + 1;
+  var start = parseInt(store.nextCode, 10);
+  if (!start || start < 1) start = STARTING_CODE;
+  return nextFreeCode(store, start);
+}
+
+function setNextCode(store, raw) {
+  var digits = String(raw || "").replace(/\D/g, "");
+  var n = parseInt(digits, 10);
+  if (!n || n < 1 || n > 9999999) throw new Error("מספר השובר אינו תקין");
+  var existing = store.vouchers[String(n)];
+  if (codeInUse(existing)) throw new Error("המספר כבר בשימוש");
+  store.nextCode = n;
+  return { voucher_code: String(nextCodeFromStore(store)) };
 }
 
 function previewVoucher(store, fields) {
@@ -109,6 +123,7 @@ function issueVoucher(store, fields) {
     status: "active",
     issued_at: new Date().toISOString(),
     redeemed_date: "",
+    cancelled_date: "",
   };
   store.vouchers[code] = voucher;
   store.nextCode = parseInt(code, 10) + 1;
@@ -135,13 +150,27 @@ function publicVoucher(voucher) {
     expiry_date: voucher.expiry_date,
     status: voucher.status,
     redeemed_date: voucher.redeemed_date || "",
+    cancelled_date: voucher.cancelled_date || "",
   };
+}
+
+function cancelVoucher(store, code) {
+  var voucher = store.vouchers[String(code)];
+  if (!voucher) throw new Error("שובר לא נמצא");
+  if (voucher.status === "redeemed") throw new Error("השובר כבר נוצל");
+  if (voucher.status === "cancelled") throw new Error("השובר כבר בוטל");
+  if (voucher.status !== "active") throw new Error("לא ניתן לבטל את השובר");
+  voucher.status = "cancelled";
+  voucher.cancelled_date = formatExpiry(new Date());
+  return voucher;
 }
 
 function redeemVoucher(store, code) {
   var voucher = store.vouchers[String(code)];
   if (!voucher) throw new Error("שובר לא נמצא");
+  if (voucher.status === "cancelled") throw new Error("השובר בוטל");
   if (voucher.status === "redeemed") throw new Error("השובר כבר נוצל");
+  if (voucher.status !== "active") throw new Error("לא ניתן לממש את השובר");
   voucher.status = "redeemed";
   voucher.redeemed_date = formatExpiry(new Date());
   return voucher;
@@ -156,6 +185,7 @@ function listVouchers(store, status) {
     .filter(function (v) {
       if (status === "active") return v.status === "active";
       if (status === "redeemed" || status === "closed") return v.status === "redeemed";
+      if (status === "cancelled") return v.status === "cancelled";
       return true;
     });
 }
@@ -229,6 +259,8 @@ module.exports = {
   phonesMatch: phonesMatch,
   parseSeriesNote: parseSeriesNote,
   nextCodeFromStore: nextCodeFromStore,
+  setNextCode: setNextCode,
+  cancelVoucher: cancelVoucher,
   previewVoucher: previewVoucher,
   issueVoucher: issueVoucher,
   unlockVoucher: unlockVoucher,

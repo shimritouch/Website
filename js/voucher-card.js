@@ -16,14 +16,22 @@
 
   function renderVoucherCard(data, options) {
     var redeemed = data.status === "redeemed";
+    var cancelled = data.status === "cancelled";
     var expiry = redeemed
       ? "נוצל בתאריך " + escapeHtml(data.redeemed_date || "")
-      : "השובר תקף עד ל-" + escapeHtml(data.expiry_date || "") + "<br />(ע״ב מקום פנוי)";
-    var stamp = redeemed ? '<div class="voucher-stamp">נוצל</div>' : "";
+      : cancelled
+        ? "בוטל בתאריך " + escapeHtml(data.cancelled_date || "")
+        : "השובר תקף עד ל-" + escapeHtml(data.expiry_date || "") + "<br />(ע״ב מקום פנוי)";
+    var stamp = redeemed
+      ? '<div class="voucher-stamp">נוצל</div>'
+      : cancelled
+        ? '<div class="voucher-stamp">בוטל</div>'
+        : "";
     var logo = (options && options.logoSrc) || "/assets/images/ShimriTouch.svg";
+    var stateClass = redeemed ? " is-redeemed" : cancelled ? " is-cancelled" : "";
     return (
       '<article class="voucher-card' +
-      (redeemed ? " is-redeemed" : "") +
+      stateClass +
       '"><div class="voucher-inner">' +
       '<header class="voucher-head">' +
       '<img class="voucher-logo" src="' +

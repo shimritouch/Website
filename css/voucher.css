@@ -147,8 +147,14 @@
   letter-spacing: 0.08em;
 }
 
-.voucher-card.is-redeemed .voucher-stamp {
+.voucher-card.is-redeemed .voucher-stamp,
+.voucher-card.is-cancelled .voucher-stamp {
   display: block;
+}
+
+.voucher-card.is-cancelled .voucher-stamp {
+  border-color: #5d6b56;
+  color: #5d6b56;
 }
 
 .gate-card,
@@ -174,6 +180,51 @@
   background: #fff;
   padding: 0.85rem 1rem;
   font: inherit;
+}
+
+.miniapp-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.miniapp-title-row h1 {
+  margin: 0;
+}
+
+.code-edit-btn {
+  display: grid;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border: 1px solid #dce2d8;
+  border-radius: 999px;
+  background: #fff;
+  color: #3e4a3d;
+}
+
+.code-dialog {
+  width: min(100% - 2rem, 420px);
+  border: 0;
+  border-radius: 24px;
+  padding: 1.2rem;
+  background: #faf8f5;
+  color: #243026;
+}
+
+.code-dialog::backdrop {
+  background: rgba(36, 48, 38, 0.45);
+}
+
+.code-dialog h2 {
+  margin: 0 0 0.8rem;
+  font-size: 1.15rem;
+}
+
+.code-dialog p {
+  margin: 0.35rem 0;
 }
 
 .miniapp-actions {

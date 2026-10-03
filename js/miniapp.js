@@ -85,6 +85,72 @@
     previewStatus.textContent = "";
   });
 
+  var codeDialog = document.getElementById("code-dialog");
+  var currentNextCode = document.getElementById("current-next-code");
+  var nextCodeInput = document.getElementById("next-code-input");
+  var codeDialogError = document.getElementById("code-dialog-error");
+
+  function authPayload(extra) {
+    var payload = extra || {};
+    var initData = telegramInitData();
+    var signed = webappAuth();
+    if (initData) payload.init_data = initData;
+    if (signed) payload.webapp_auth = signed;
+    return payload;
+  }
+
+  function nextCodeUrl() {
+    var signed = webappAuth();
+    return signed ? "/api/vouchers/next-code?auth=" + encodeURIComponent(signed) : "/api/vouchers/next-code";
+  }
+
+  document.getElementById("edit-code-btn").addEventListener("click", function () {
+    codeDialogError.textContent = "";
+    currentNextCode.textContent = "...";
+    fetch(nextCodeUrl(), { headers: headers() })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok) throw new Error(data.error || "לא ניתן לקרוא את המספר הבא");
+          return data;
+        });
+      })
+      .then(function (data) {
+        currentNextCode.textContent = data.voucher_code;
+        nextCodeInput.value = data.voucher_code;
+        codeDialog.showModal();
+      })
+      .catch(function (err) {
+        formError.textContent = err.message;
+      });
+  });
+
+  document.getElementById("close-code-dialog").addEventListener("click", function () {
+    codeDialog.close();
+  });
+
+  document.getElementById("code-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    codeDialogError.textContent = "";
+    fetch("/api/vouchers/next-code", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(authPayload({ next_code: nextCodeInput.value })),
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok) throw new Error(data.error || "לא ניתן לשמור את המספר");
+          return data;
+        });
+      })
+      .then(function (data) {
+        currentNextCode.textContent = data.voucher_code;
+        codeDialog.close();
+      })
+      .catch(function (err) {
+        codeDialogError.textContent = err.message;
+      });
+  });
+
   document.getElementById("issue-btn").addEventListener("click", function () {
     if (!draft) return;
     previewStatus.textContent = "מפיק שובר...";

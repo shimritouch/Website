@@ -43,6 +43,7 @@
         view.innerHTML =
           window.ShimriVoucher.renderVoucherCard(voucher) +
           '<div class="voucher-download"><button id="download-voucher" class="rounded-full bg-primary px-5 py-3 font-semibold text-white" type="button">הורדה</button></div>';
+        window.ShimriVoucher.fitVoucherCard(view.querySelector(".voucher-card"));
         document.getElementById("download-voucher").addEventListener("click", function () {
           downloadCard(voucher.voucher_code, phone);
         });

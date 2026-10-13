@@ -9,6 +9,9 @@
 }
 
 .voucher-card {
+  --fit-up: 0px;
+  --fit-down: 0px;
+  --fit-scale: 1;
   position: relative;
   container-type: inline-size;
   overflow: hidden;
@@ -25,7 +28,7 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  padding: 2.8cqi 3.6cqi 8cqi;
+  padding: calc(2.8cqi - var(--fit-up)) 3.6cqi calc(8cqi - var(--fit-down));
   text-align: center;
   font-family: "Montserrat", "Heebo", sans-serif;
 }
@@ -56,13 +59,15 @@
   margin: 0 auto;
   width: 100%;
   text-align: center;
+  direction: rtl;
+  unicode-bidi: isolate;
 }
 
 .voucher-recipient {
-  font-size: 5.1cqi;
+  font-size: calc(5.1cqi * var(--fit-scale));
   font-weight: 800;
   line-height: 1.15;
-  margin: 1cqi 0 1cqi;
+  margin: calc(1cqi * var(--fit-scale)) 0;
 }
 
 .voucher-message,
@@ -74,31 +79,36 @@
 
 .voucher-message,
 .voucher-duration {
-  font-size: 3.05cqi;
+  font-size: calc(3.05cqi * var(--fit-scale));
   font-weight: 500;
-  margin: 0 0 0.7cqi;
+  margin: 0 0 calc(0.7cqi * var(--fit-scale));
+}
+
+.voucher-message {
+  margin-bottom: calc(0.7cqi * var(--fit-scale) + var(--fit-down));
+  overflow-wrap: anywhere;
 }
 
 .voucher-sender {
-  font-size: 4.15cqi;
+  font-size: calc(4.15cqi * var(--fit-scale));
   font-weight: 800;
-  margin: 0.2cqi 0 1.5cqi;
+  margin: calc(0.2cqi * var(--fit-scale)) 0 calc(1.5cqi * var(--fit-scale));
 }
 
 .voucher-code-label {
-  font-size: 2.9cqi;
+  font-size: calc(2.9cqi * var(--fit-scale));
   font-weight: 700;
 }
 
 .voucher-code-value {
-  font-size: 4.5cqi;
+  font-size: calc(4.5cqi * var(--fit-scale));
   font-weight: 800;
   letter-spacing: 0.03em;
-  margin: 0.1cqi 0 1.2cqi;
+  margin: calc(0.1cqi * var(--fit-scale)) 0 calc(1.2cqi * var(--fit-scale));
 }
 
 .voucher-contact {
-  font-size: 2.75cqi;
+  font-size: calc(2.75cqi * var(--fit-scale));
   font-weight: 600;
   margin: 0;
 }

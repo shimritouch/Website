@@ -43,7 +43,7 @@
       '<img class="voucher-logo" src="' +
       logo +
       '" alt="ShimriTouch" />' +
-      '<h1 class="voucher-kicker">שובר עיסוי ב ShimriTouch</h1>' +
+      '<h1 class="voucher-kicker" dir="rtl">&#x202B;שובר עיסוי ב ShimriTouch&#x202C;</h1>' +
       "</header>" +
       '<p class="voucher-recipient">' +
       recipientLine(data.recipient_name) +
@@ -73,5 +73,59 @@
     );
   }
 
-  root.ShimriVoucher = { renderVoucherCard: renderVoucherCard, escapeHtml: escapeHtml };
+  function fitVoucherCard(card) {
+    if (!card || !card.querySelector) return;
+    function run() {
+      var message = card.querySelector(".voucher-message");
+      var next = message && message.nextElementSibling;
+      var contact = card.querySelector(".voucher-contact");
+      var foot = card.querySelector(".voucher-foot");
+      if (!message || !next || !contact || !foot) return;
+      card.style.setProperty("--fit-up", "0px");
+      card.style.setProperty("--fit-down", "0px");
+      card.style.setProperty("--fit-scale", "1");
+      var unit = card.getBoundingClientRect().width / 100;
+      var maxUp = 1.6 * unit;
+      var maxDown = 2.4 * unit;
+      var up = 0;
+      var down = 0;
+      var scale = 1;
+      function apply() {
+        card.style.setProperty("--fit-up", up.toFixed(2) + "px");
+        card.style.setProperty("--fit-down", down.toFixed(2) + "px");
+        card.style.setProperty("--fit-scale", String(scale));
+      }
+      function messageHits() {
+        return message.getBoundingClientRect().bottom > next.getBoundingClientRect().top + 0.5;
+      }
+      function footerHits() {
+        return contact.getBoundingClientRect().bottom > foot.getBoundingClientRect().top - 1;
+      }
+      var guard = 0;
+      while (messageHits() && down < maxDown && guard < 20) {
+        down = Math.min(maxDown, down + unit * 0.2);
+        apply();
+        guard += 1;
+      }
+      while (footerHits() && up < maxUp && guard < 40) {
+        up = Math.min(maxUp, up + unit * 0.2);
+        apply();
+        guard += 1;
+      }
+      while ((messageHits() || footerHits()) && scale > 0.72) {
+        scale = Math.round((scale - 0.04) * 100) / 100;
+        apply();
+      }
+    }
+    run();
+    if (root.document && root.document.fonts && root.document.fonts.ready) {
+      root.document.fonts.ready.then(run);
+    }
+  }
+
+  root.ShimriVoucher = {
+    renderVoucherCard: renderVoucherCard,
+    fitVoucherCard: fitVoucherCard,
+    escapeHtml: escapeHtml,
+  };
 })(window);

@@ -44,7 +44,9 @@ function text(x, y, value, attrs) {
     Math.round(y) +
     '" text-anchor="' +
     (attrs.anchor || "middle") +
-    '" direction="rtl" font-family="' +
+    '" direction="' +
+    (attrs.direction || "rtl") +
+    '" font-family="' +
     attrs.family +
     '" font-size="' +
     Math.round(attrs.size) +
@@ -124,9 +126,13 @@ function inkWidth(png) {
   return maxX < minX ? 0 : maxX - minX + 1;
 }
 
+var measureCache = {};
+
 function measureText(value, attrs) {
-  var fonts = fontFiles();
   var size = Math.round(attrs.size);
+  var key = [value, size, attrs.weight, attrs.family, attrs.spacing || 0].join("\n");
+  if (measureCache[key]) return measureCache[key];
+  var fonts = fontFiles();
   var svg =
     '<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="' +
     (size * 3) +
@@ -143,7 +149,42 @@ function measureText(value, attrs) {
   })
     .render()
     .asPng();
-  return inkWidth(png);
+  measureCache[key] = inkWidth(png);
+  return measureCache[key];
+}
+
+function wrapText(value, attrs, maxWidth) {
+  var raw = String(value || "").replace(/\s+/g, " ").trim();
+  if (!raw) return [""];
+  var lines = [];
+  var current = "";
+  function fits(sample) {
+    return measureText(sample, attrs) <= maxWidth;
+  }
+  raw.split(" ").forEach(function (word) {
+    var candidate = current ? current + " " + word : word;
+    if (fits(candidate)) {
+      current = candidate;
+      return;
+    }
+    if (current) lines.push(current);
+    if (fits(word)) {
+      current = word;
+      return;
+    }
+    var chunk = "";
+    word.split("").forEach(function (ch) {
+      if (chunk && !fits(chunk + ch)) {
+        lines.push(chunk);
+        chunk = ch;
+      } else {
+        chunk += ch;
+      }
+    });
+    current = chunk;
+  });
+  if (current) lines.push(current);
+  return lines;
 }
 
 function logoImage() {
@@ -170,44 +211,113 @@ function buildVoucherSvg(voucher) {
   var padTop = cqi(2.8);
   var padX = cqi(3.6);
   var headH = cqi(11);
-  var y = padTop + headH + cqi(0.4);
   var parts = [];
+  var logoY = padTop;
+  var maxTextWidth = WIDTH - padX * 2;
+  var floor = HEIGHT - cqi(1.6) - cqi(3.7) * 1.5 - cqi(0.6);
+  var recipient = String(voucher.recipient_name || "").trim().replace(/^ל[\s\u200f]*/, "");
 
-  function flow(value, sizeCqi, weight, marginTop, marginBottom, lineHeight, family, fill, spacing) {
-    var size = cqi(sizeCqi);
-    y += cqi(marginTop);
-    parts.push(
-      text(WIDTH / 2, baseline(y, size, lineHeight), value, {
-        family: family || "Heebo",
-        size: size,
-        weight: weight,
-        fill: fill || "#243026",
-        spacing: spacing || 0,
-      })
-    );
-    y += size * lineHeight + cqi(marginBottom);
+  function item(value, sizeCqi, weight, marginTop, marginBottom, lineHeight, spacingEm, scale) {
+    var size = cqi(sizeCqi) * scale;
+    return {
+      lines: Array.isArray(value) ? value : [value],
+      size: size,
+      weight: weight,
+      marginTop: cqi(marginTop) * scale,
+      marginBottom: cqi(marginBottom) * scale,
+      lineHeight: lineHeight,
+      spacing: spacingEm ? size * spacingEm : 0,
+    };
   }
 
-  var titleSize = cqi(4.6);
-  var titleTop = padTop + (headH - titleSize * 1.15) / 2;
+  function itemHeight(entry) {
+    return entry.marginTop + entry.lines.length * entry.size * entry.lineHeight + entry.marginBottom;
+  }
+
+  function plan(scale) {
+    var messageSize = cqi(3.05) * scale;
+    var messageAttrs = { family: "Heebo", size: messageSize, weight: 500, fill: "#243026" };
+    var messageLines = wrapText(voucher.message, messageAttrs, maxTextWidth);
+    var messageLine = messageSize * 1.45;
+    var messageH = messageLines.length * messageLine + cqi(0.7) * scale;
+    var extra = messageH - (messageLine + cqi(0.7) * scale);
+    var recipientItem = item("ל" + recipient, 5.1, 800, 1, 1, 1.15, 0, scale);
+    var lower = [
+      item("קיבלת במתנה שובר לעיסוי מפנק באורך " + (voucher.duration || "") + " דקות", 3.05, 500, 0, 0.7, 1.45, 0, scale),
+      item("אוהבת, " + (voucher.sender_name || ""), 4.15, 800, 0.2, 1.5, 1.5, 0, scale),
+      item("קוד שובר", 2.9, 700, 0, 0, 1.5, 0, scale),
+      item(String(voucher.voucher_code || ""), 4.5, 800, 0.1, 1.2, 1.5, 0.03, scale),
+      item(["יש לתאם מראש תאריך ושעת הגעה", "שמרית 054-4459600"], 2.75, 600, 0, 0, 1.45, 0, scale),
+    ];
+    var upperH = itemHeight(recipientItem);
+    var lowerH = lower.reduce(function (sum, entry) {
+      return sum + itemHeight(entry);
+    }, 0);
+    var naturalBottom = padTop + headH + cqi(0.4) + upperH + messageH + lowerH;
+    var maxUp = Math.max(0, padTop - cqi(0.9));
+    var up = 0;
+    if (extra > 0.5) {
+      up = Math.min(maxUp, extra / 2);
+      if (naturalBottom - up > floor) up = Math.min(maxUp, Math.max(0, naturalBottom - floor));
+    }
+    return {
+      messageLines: messageLines,
+      messageAttrs: messageAttrs,
+      messageLine: messageLine,
+      messageMargin: cqi(0.7) * scale,
+      up: up,
+      fits: naturalBottom - up <= floor + 0.5,
+      recipientItem: recipientItem,
+      lower: lower,
+    };
+  }
+
+  var scale = 1;
+  var placed = plan(scale);
+  while (!placed.fits && scale > 0.72) {
+    scale = Math.round((scale - 0.04) * 1000) / 1000;
+    placed = plan(scale);
+  }
+  logoY = padTop - placed.up;
+
+  var kickerSize = cqi(4.6);
+  var kickerTop = logoY + (headH - kickerSize * 1.15) / 2;
   parts.push(
-    text(WIDTH / 2, baseline(titleTop, titleSize, 1.15), "שובר עיסוי ב ShimriTouch", {
+    text(WIDTH / 2, baseline(kickerTop, kickerSize, 1.15), "\u202Bשובר עיסוי ב ShimriTouch\u202C", {
       family: "Suez One",
-      size: titleSize,
+      size: kickerSize,
       weight: 400,
       fill: "#5d6b56",
     })
   );
 
-  var recipient = String(voucher.recipient_name || "").trim().replace(/^ל[\s\u200f]*/, "");
-  flow("ל" + recipient, 5.1, 800, 1, 1, 1.15);
-  flow(voucher.message, 3.05, 500, 0, 0.7, 1.45);
-  flow("קיבלת במתנה שובר לעיסוי מפנק באורך " + (voucher.duration || "") + " דקות", 3.05, 500, 0, 0.7, 1.45);
-  flow("אוהבת, " + (voucher.sender_name || ""), 4.15, 800, 0.2, 1.5, 1.5);
-  flow("קוד שובר", 2.9, 700, 0, 0, 1.5);
-  flow(String(voucher.voucher_code || ""), 4.5, 800, 0.1, 1.2, 1.5, "Heebo", "#243026", cqi(4.5) * 0.03);
-  flow("יש לתאם מראש תאריך ושעת הגעה", 2.75, 600, 0, 0, 1.45);
-  flow("שמרית 054-4459600", 2.75, 600, 0, 0, 1.45);
+  function drawItem(entry, y) {
+    y += entry.marginTop;
+    entry.lines.forEach(function (line) {
+      parts.push(
+        text(WIDTH / 2, baseline(y, entry.size, entry.lineHeight), line, {
+          family: "Heebo",
+          size: entry.size,
+          weight: entry.weight,
+          fill: "#243026",
+          spacing: entry.spacing,
+        })
+      );
+      y += entry.size * entry.lineHeight;
+    });
+    return y + entry.marginBottom;
+  }
+
+  var y = logoY + headH + cqi(0.4);
+  y = drawItem(placed.recipientItem, y);
+  placed.messageLines.forEach(function (line) {
+    parts.push(text(WIDTH / 2, baseline(y, placed.messageAttrs.size, 1.45), line, placed.messageAttrs));
+    y += placed.messageLine;
+  });
+  y += placed.messageMargin;
+  placed.lower.forEach(function (entry) {
+    y = drawItem(entry, y);
+  });
 
   var expirySize = cqi(1.85);
   var expiryBox = expirySize * 1.3;
@@ -349,7 +459,7 @@ function buildVoucherSvg(voucher) {
     '" x="' +
     Math.round(padX) +
     '" y="' +
-    Math.round(padTop) +
+    Math.round(logoY) +
     '" width="' +
     logo.width +
     '" height="' +

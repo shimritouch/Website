@@ -72,6 +72,7 @@
         formStep.classList.add("hidden");
         previewStep.classList.remove("hidden");
         previewCard.innerHTML = window.ShimriVoucher.renderVoucherCard(voucher);
+        window.ShimriVoucher.fitVoucherCard(previewCard.querySelector(".voucher-card"));
       })
       .catch(function (err) {
         formError.textContent = err.message;

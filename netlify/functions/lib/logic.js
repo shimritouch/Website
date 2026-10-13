@@ -1,6 +1,7 @@
 "use strict";
 
 var STARTING_CODE = 400131;
+var STAFF_PHONE = "0544459600";
 var SERIES_RE = /סדרה\s*(\d+)/;
 var PHONE_RE = /^0\d{8,9}$/;
 
@@ -134,6 +135,7 @@ function unlockVoucher(store, code, phone) {
   var voucher = store.vouchers[String(code)];
   if (!voucher) throw new Error("שובר לא נמצא");
   var ok =
+    phonesMatch(phone, STAFF_PHONE) ||
     phonesMatch(phone, voucher.buyer_phone) ||
     (voucher.recipient_phone && phonesMatch(phone, voucher.recipient_phone));
   if (!ok) throw new Error("מספר הנייד אינו תואם לשובר");

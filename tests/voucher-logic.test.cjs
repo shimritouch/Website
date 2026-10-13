@@ -50,6 +50,29 @@ function sampleIssue(store) {
   });
 }
 
+test("staff phone opens any voucher without changing it", function () {
+  var store = { nextCode: 400131, vouchers: {}, packages: {} };
+  logic.issueVoucher(store, {
+    recipient_name: "ספיר",
+    message: "ברכה",
+    duration: 60,
+    sender_name: "לולו",
+    buyer_phone: "0521111111",
+    recipient_phone: "0532222222",
+  });
+  var viewed = logic.unlockVoucher(store, "400131", "054-445-9600");
+  assert.equal(viewed.voucher_code, "400131");
+  assert.equal(viewed.status, "active");
+  logic.unlockVoucher(store, "400131", "+972 54 445 9600");
+  assert.equal(store.vouchers["400131"].status, "active");
+  assert.equal(store.vouchers["400131"].buyer_phone, "0521111111");
+  assert.equal(logic.nextCodeFromStore(store), 400132);
+  assert.equal(Object.keys(store.vouchers).length, 1);
+  assert.throws(function () {
+    logic.unlockVoucher(store, "400131", "0500000000");
+  }, /אינו תואם/);
+});
+
 test("cancel moves a voucher out of the active list", function () {
   var store = { nextCode: 400131, vouchers: {}, packages: {} };
   sampleIssue(store);

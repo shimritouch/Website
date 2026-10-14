@@ -193,10 +193,20 @@ exports.handler = async function (event) {
     return json(404, { error: "not found" });
   } catch (err) {
     var message = (err && err.message) || "שגיאה";
-    if (err && err.statusCode === 404) return json(404, { error: message });
+    var reason = (err && err.reason) || "request_failed";
+    console.error(
+      JSON.stringify({
+        action: method + " " + path,
+        reason: reason,
+        message: message,
+        at: new Date().toISOString(),
+      })
+    );
+    if (err && err.statusCode === 404) return json(404, { error: message, reason: reason });
+    if (err && err.statusCode === 409) return json(409, { error: message, reason: "conflict" });
     if (/ENOENT|Blobs|חסר מודול|MissingBlobs|connectLambda/i.test(message)) {
-      return json(500, { error: "שמירת השוברים נכשלה. נסו שוב בעוד רגע." });
+      return json(500, { error: "שמירת השוברים נכשלה. נסו שוב בעוד רגע.", reason: "store_unavailable" });
     }
-    return json(400, { error: message });
+    return json(400, { error: message, reason: reason });
   }
 };

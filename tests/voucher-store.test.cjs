@@ -19,9 +19,10 @@ test("local store writes next to the project, not /data", async function () {
   process.env.VOUCHER_STORE_FILE = file;
   try {
     var listed = await storeApi.withStore(function (store) {
-      return storeApi.emptyStore().vouchers === store.vouchers ? store : store;
+      store.nextCode = 400132;
+      return store;
     });
-    assert.equal(listed.nextCode, 400131);
+    assert.equal(listed.nextCode, 400132);
     assert.equal(fs.existsSync("/data"), false);
     assert.equal(fs.existsSync(file), true);
   } finally {
@@ -32,6 +33,70 @@ test("local store writes next to the project, not /data", async function () {
       // ignore
     }
   }
+});
+
+test("a read does not write the store back", async function () {
+  var writes = 0;
+  var result = await storeApi.updateWithRetry(
+    async function () {
+      return { data: { nextCode: 400131, vouchers: { "400131": { status: "active" } }, packages: {} }, etag: "a" };
+    },
+    async function () {
+      writes += 1;
+      return { modified: true };
+    },
+    function (store) {
+      return store.vouchers["400131"].status;
+    }
+  );
+  assert.equal(result, "active");
+  assert.equal(writes, 0);
+});
+
+test("a conflicting save is retried until it lands", async function () {
+  var version = {
+    data: { nextCode: 400132, vouchers: { "400131": { status: "active", voucher_code: "400131" } }, packages: {} },
+    etag: "1",
+  };
+  var writes = 0;
+  await storeApi.updateWithRetry(
+    async function () {
+      return { data: JSON.parse(JSON.stringify(version.data)), etag: version.etag };
+    },
+    async function (data, etag) {
+      writes += 1;
+      if (etag !== version.etag) return { modified: false };
+      if (writes === 1) return { modified: false };
+      version = { data: data, etag: "2" };
+      return { modified: true };
+    },
+    function (store) {
+      store.vouchers["400131"].status = "cancelled";
+    }
+  );
+  assert.equal(version.data.vouchers["400131"].status, "cancelled");
+  assert.equal(writes, 2);
+});
+
+test("repeated conflicts stop instead of overwriting", async function () {
+  await assert.rejects(
+    function () {
+      return storeApi.updateWithRetry(
+        async function () {
+          return { data: { nextCode: 400131, vouchers: {}, packages: {} }, etag: "1" };
+        },
+        async function () {
+          return { modified: false };
+        },
+        function (store) {
+          store.nextCode = 400132;
+        }
+      );
+    },
+    function (err) {
+      return err.statusCode === 409 && err.reason === "conflict";
+    }
+  );
 });
 
 test("serverless runtime does not mkdir /data", async function () {

@@ -156,12 +156,18 @@ function publicVoucher(voucher) {
   };
 }
 
+function reject(reason, message) {
+  var err = new Error(message);
+  err.reason = reason;
+  throw err;
+}
+
 function cancelVoucher(store, code) {
   var voucher = store.vouchers[String(code)];
-  if (!voucher) throw new Error("שובר לא נמצא");
-  if (voucher.status === "redeemed") throw new Error("השובר כבר נוצל");
-  if (voucher.status === "cancelled") throw new Error("השובר כבר בוטל");
-  if (voucher.status !== "active") throw new Error("לא ניתן לבטל את השובר");
+  if (!voucher) reject("not_found", "שובר לא נמצא");
+  if (voucher.status === "redeemed") reject("already_redeemed", "השובר כבר נוצל");
+  if (voucher.status === "cancelled") reject("already_cancelled", "השובר כבר בוטל");
+  if (voucher.status !== "active") reject("not_active", "לא ניתן לבטל את השובר");
   voucher.status = "cancelled";
   voucher.cancelled_date = formatExpiry(new Date());
   return voucher;

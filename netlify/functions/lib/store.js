@@ -30,6 +30,27 @@ function parseStore(raw) {
   return Object.assign(emptyStore(), JSON.parse(raw));
 }
 
+function conflictError() {
+  var err = new Error("השמירה התנגשה עם פעולה אחרת. נסו שוב.");
+  err.statusCode = 409;
+  err.reason = "conflict";
+  return err;
+}
+
+async function updateWithRetry(read, write, mutator) {
+  for (var attempt = 0; attempt < 5; attempt += 1) {
+    var current = await read();
+    var before = parseStore(current && current.data);
+    var snapshot = JSON.stringify(before);
+    var data = JSON.parse(snapshot);
+    var result = await mutator(data);
+    if (JSON.stringify(data) === snapshot) return result;
+    var written = await write(data, current && current.etag);
+    if (!written || written.modified !== false) return result;
+  }
+  throw conflictError();
+}
+
 async function withBlobs(mutator, event) {
   var blobs = loadBlobs();
   if (!blobs || !blobs.getStore) {
@@ -38,12 +59,18 @@ async function withBlobs(mutator, event) {
   if (event && typeof blobs.connectLambda === "function") {
     blobs.connectLambda(event);
   }
-  var store = blobs.getStore(STORE_NAME);
-  var raw = await store.get(STORE_KEY, { type: "json" });
-  var data = parseStore(raw);
-  var result = await mutator(data);
-  await store.setJSON(STORE_KEY, data);
-  return result;
+  var store = blobs.getStore({ name: STORE_NAME, consistency: "strong" });
+  return updateWithRetry(
+    async function () {
+      var current = await store.getWithMetadata(STORE_KEY, { type: "json", consistency: "strong" });
+      return { data: current && current.data, etag: current && current.etag };
+    },
+    function (data, etag) {
+      if (etag) return store.setJSON(STORE_KEY, data, { onlyIfMatch: etag });
+      return store.setJSON(STORE_KEY, data, { onlyIfNew: true });
+    },
+    mutator
+  );
 }
 
 function localFilePath() {
@@ -68,10 +95,16 @@ function writeFileStore(file, data) {
 
 async function withFileStore(mutator) {
   var file = localFilePath();
-  var local = readFileStore(file);
-  var out = await mutator(local);
-  writeFileStore(file, local);
-  return out;
+  return updateWithRetry(
+    async function () {
+      return { data: readFileStore(file), etag: "" };
+    },
+    async function (data) {
+      writeFileStore(file, data);
+      return { modified: true };
+    },
+    mutator
+  );
 }
 
 async function withStore(mutator, event) {
@@ -85,4 +118,4 @@ async function withStore(mutator, event) {
   }
 }
 
-module.exports = { withStore: withStore, emptyStore: emptyStore };
+module.exports = { withStore: withStore, emptyStore: emptyStore, updateWithRetry: updateWithRetry };

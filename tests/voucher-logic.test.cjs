@@ -73,6 +73,28 @@ test("staff phone opens any voucher without changing it", function () {
   }, /אינו תואם/);
 });
 
+test("cancel reports why a voucher cannot be cancelled", function () {
+  var store = { nextCode: 400131, vouchers: {}, packages: {} };
+  assert.throws(
+    function () {
+      logic.cancelVoucher(store, "400131");
+    },
+    function (err) {
+      return err.reason === "not_found";
+    }
+  );
+  sampleIssue(store);
+  logic.redeemVoucher(store, "400131");
+  assert.throws(
+    function () {
+      logic.cancelVoucher(store, "400131");
+    },
+    function (err) {
+      return err.reason === "already_redeemed";
+    }
+  );
+});
+
 test("cancel moves a voucher out of the active list", function () {
   var store = { nextCode: 400131, vouchers: {}, packages: {} };
   sampleIssue(store);

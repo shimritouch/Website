@@ -59,10 +59,10 @@ async function withBlobs(mutator, event) {
   if (event && typeof blobs.connectLambda === "function") {
     blobs.connectLambda(event);
   }
-  var store = blobs.getStore({ name: STORE_NAME, consistency: "strong" });
+  var store = blobs.getStore(STORE_NAME);
   return updateWithRetry(
     async function () {
-      var current = await store.getWithMetadata(STORE_KEY, { type: "json", consistency: "strong" });
+      var current = await store.getWithMetadata(STORE_KEY, { type: "json" });
       return { data: current && current.data, etag: current && current.etag };
     },
     function (data, etag) {

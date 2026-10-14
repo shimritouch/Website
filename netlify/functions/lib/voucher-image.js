@@ -244,7 +244,7 @@ function buildVoucherSvg(voucher) {
     var recipientItem = item("ל" + recipient, 5.1, 800, 1, 1, 1.15, 0, scale);
     var lower = [
       item("קיבלת במתנה שובר לעיסוי מפנק באורך " + (voucher.duration || "") + " דקות", 3.05, 500, 0, 0.7, 1.45, 0, scale),
-      item("אוהבת, " + (voucher.sender_name || ""), 4.15, 800, 0.2, 1.5, 1.5, 0, scale),
+      item(voucher.sender_name || "", 4.15, 800, 0.2, 1.5, 1.5, 0, scale),
       item("קוד שובר", 2.9, 700, 0, 0, 1.5, 0, scale),
       item(String(voucher.voucher_code || ""), 4.5, 800, 0.1, 1.2, 1.5, 0.03, scale),
       item(["יש לתאם מראש תאריך ושעת הגעה", "שמרית 054-4459600"], 2.75, 600, 0, 0, 1.45, 0, scale),

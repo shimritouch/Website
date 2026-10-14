@@ -54,7 +54,7 @@
       '<p class="voucher-duration">קיבלת במתנה שובר לעיסוי מפנק באורך ' +
       escapeHtml(data.duration || "") +
       " דקות</p>" +
-      '<p class="voucher-sender">אוהבת, ' +
+      '<p class="voucher-sender">' +
       escapeHtml(data.sender_name || "") +
       "</p>" +
       '<p class="voucher-code-label">קוד שובר</p>' +

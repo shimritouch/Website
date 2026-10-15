@@ -35,38 +35,39 @@ function esc(value) {
     .replace(/"/g, "&quot;");
 }
 
+function rtlValue(value) {
+  var raw = String(value || "");
+  if (raw.charAt(0) === "\u202B") return raw;
+  return "\u202B" + raw + "\u202C";
+}
+
 function text(x, y, value, attrs) {
   var spacing = attrs.spacing ? ' letter-spacing="' + attrs.spacing.toFixed(2) + '"' : "";
   return (
-    '<text x="' +
-    Math.round(x) +
-    '" y="' +
-    Math.round(y) +
-    '" text-anchor="' +
-    (attrs.anchor || "middle") +
-    '" direction="' +
-    (attrs.direction || "rtl") +
-    '" font-family="' +
-    attrs.family +
-    '" font-size="' +
-    Math.round(attrs.size) +
-    '" font-weight="' +
-    attrs.weight +
-    '" fill="' +
-    attrs.fill +
-    '"' +
-    spacing +
-    ">" +
-    esc(value) +
-    "</text>"
+    '<text x="' + Math.round(x) + '" y="' + Math.round(y) + '" text-anchor="' + (attrs.anchor || "middle") +
+    '" direction="rtl" font-family="' + attrs.family + '" font-size="' + Math.round(attrs.size) +
+    '" font-weight="' + attrs.weight + '" fill="' + attrs.fill + '"' + spacing + ">" + esc(rtlValue(value)) + "</text>"
   );
 }
 
+function fontStack(weight, hebrewOnly) {
+  var suffix =
+    weight >= 800 ? " ExtraBold" : weight >= 600 && weight < 700 ? " SemiBold" : weight >= 500 && weight < 600 ? " Medium" : "";
+  var hebrew = "Heebo" + suffix;
+  return {
+    family: hebrewOnly ? hebrew : "Montserrat" + suffix + ", " + hebrew,
+    weight: suffix ? 400 : weight >= 700 ? 700 : 400,
+  };
+}
+
 function fontFiles() {
-  return [
-    findFile(["netlify", "functions", "fonts", "SuezOne-Regular.ttf"]),
-    findFile(["netlify", "functions", "fonts", "Heebo.ttf"]),
-  ];
+  var weights = [400, 500, 600, 700, 800];
+  var files = [findFile(["netlify", "functions", "fonts", "SuezOne-Regular.ttf"])];
+  weights.forEach(function (weight) {
+    files.push(findFile(["netlify", "functions", "fonts", "Heebo-" + weight + ".ttf"]));
+    files.push(findFile(["netlify", "functions", "fonts", "Montserrat-" + weight + ".ttf"]));
+  });
+  return files;
 }
 
 function inkWidth(png) {
@@ -127,7 +128,6 @@ function inkWidth(png) {
 }
 
 var measureCache = {};
-
 function measureText(value, attrs) {
   var size = Math.round(attrs.size);
   var key = [value, size, attrs.weight, attrs.family, attrs.spacing || 0].join("\n");
@@ -202,7 +202,7 @@ function logoImage() {
 }
 
 function baseline(top, size, lineHeight) {
-  return top + ((size * lineHeight - size) / 2) + size * 0.8;
+  return top + (size * lineHeight - size * 1.219) / 2 + size * 0.968;
 }
 
 function buildVoucherSvg(voucher) {
@@ -214,15 +214,17 @@ function buildVoucherSvg(voucher) {
   var parts = [];
   var logoY = padTop;
   var maxTextWidth = WIDTH - padX * 2;
-  var floor = HEIGHT - cqi(1.6) - cqi(3.7) * 1.5 - cqi(0.6);
+  var footTop = HEIGHT - cqi(1.6) - cqi(3.7) * 1.5;
   var recipient = String(voucher.recipient_name || "").trim().replace(/^ל[\s\u200f]*/, "");
 
   function item(value, sizeCqi, weight, marginTop, marginBottom, lineHeight, spacingEm, scale) {
     var size = cqi(sizeCqi) * scale;
+    var stack = fontStack(weight);
     return {
       lines: Array.isArray(value) ? value : [value],
       size: size,
-      weight: weight,
+      weight: stack.weight,
+      family: stack.family,
       marginTop: cqi(marginTop) * scale,
       marginBottom: cqi(marginBottom) * scale,
       lineHeight: lineHeight,
@@ -236,11 +238,16 @@ function buildVoucherSvg(voucher) {
 
   function plan(scale) {
     var messageSize = cqi(3.05) * scale;
-    var messageAttrs = { family: "Heebo", size: messageSize, weight: 500, fill: "#243026" };
+    var messageStack = fontStack(500);
+    var messageAttrs = {
+      family: messageStack.family,
+      size: messageSize,
+      weight: messageStack.weight,
+      fill: "#243026",
+    };
     var messageLines = wrapText(voucher.message, messageAttrs, maxTextWidth);
     var messageLine = messageSize * 1.45;
     var messageH = messageLines.length * messageLine + cqi(0.7) * scale;
-    var extra = messageH - (messageLine + cqi(0.7) * scale);
     var recipientItem = item("ל" + recipient, 5.1, 800, 1, 1, 1.15, 0, scale);
     var lower = [
       item("קיבלת במתנה שובר לעיסוי מפנק באורך " + (voucher.duration || "") + " דקות", 3.05, 500, 0, 0.7, 1.45, 0, scale),
@@ -254,19 +261,15 @@ function buildVoucherSvg(voucher) {
       return sum + itemHeight(entry);
     }, 0);
     var naturalBottom = padTop + headH + cqi(0.4) + upperH + messageH + lowerH;
-    var maxUp = Math.max(0, padTop - cqi(0.9));
-    var up = 0;
-    if (extra > 0.5) {
-      up = Math.min(maxUp, extra / 2);
-      if (naturalBottom - up > floor) up = Math.min(maxUp, Math.max(0, naturalBottom - floor));
-    }
+    var overlap = naturalBottom - (footTop - WIDTH / 720);
+    var up = overlap > 0 ? Math.min(cqi(1.6), overlap) : 0;
     return {
       messageLines: messageLines,
       messageAttrs: messageAttrs,
       messageLine: messageLine,
       messageMargin: cqi(0.7) * scale,
       up: up,
-      fits: naturalBottom - up <= floor + 0.5,
+      fits: naturalBottom - up <= footTop - WIDTH / 720 + 0.5,
       recipientItem: recipientItem,
       lower: lower,
     };
@@ -296,7 +299,7 @@ function buildVoucherSvg(voucher) {
     entry.lines.forEach(function (line) {
       parts.push(
         text(WIDTH / 2, baseline(y, entry.size, entry.lineHeight), line, {
-          family: "Heebo",
+          family: entry.family,
           size: entry.size,
           weight: entry.weight,
           fill: "#243026",
@@ -328,7 +331,13 @@ function buildVoucherSvg(voucher) {
       : voucher.status === "cancelled"
         ? ["בוטל בתאריך " + (voucher.cancelled_date || "")]
         : ["השובר תקף עד ל-" + (voucher.expiry_date || ""), "(ע״ב מקום פנוי)"];
-  var expiryAttrs = { family: "Heebo", size: expirySize, weight: 500, fill: "#243026" };
+  var expiryStack = fontStack(400);
+  var expiryAttrs = {
+    family: expiryStack.family,
+    size: expirySize,
+    weight: expiryStack.weight,
+    fill: "#243026",
+  };
   var expiryWidth = 0;
   expiryLines.forEach(function (value) {
     expiryWidth = Math.max(expiryWidth, measureText(value, expiryAttrs));
@@ -358,17 +367,19 @@ function buildVoucherSvg(voucher) {
     var stampDate = redeemedStamp ? String(voucher.redeemed_date || "") : "";
     var titleSize = cqi(6.6);
     var dateSize = cqi(2.9);
+    var titleStack = fontStack(800, true);
+    var dateStack = fontStack(700, true);
     var titleAttrs = {
-      family: "Heebo",
+      family: titleStack.family,
       size: titleSize,
-      weight: 800,
+      weight: titleStack.weight,
       fill: stampColor,
       spacing: titleSize * 0.06,
     };
     var dateAttrs = {
-      family: "Heebo",
+      family: dateStack.family,
       size: dateSize,
-      weight: 700,
+      weight: dateStack.weight,
       fill: stampColor,
       spacing: dateSize * 0.04,
     };
@@ -441,12 +452,12 @@ function buildVoucherSvg(voucher) {
     '" rx="' +
     radius +
     '"/></clipPath>' +
+    '<g clip-path="url(#card)">' +
     '<rect width="' +
     WIDTH +
     '" height="' +
     HEIGHT +
-    '" fill="#f4f2ed"/>' +
-    '<g clip-path="url(#card)">' +
+    '" fill="#e6ede6"/>' +
     '<image href="' +
     bg +
     '" x="0" y="0" width="' +

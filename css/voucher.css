@@ -96,6 +96,7 @@
 }
 
 .voucher-code-label {
+  margin: 1em 0;
   font-size: calc(2.9cqi * var(--fit-scale));
   font-weight: 700;
 }

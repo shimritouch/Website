@@ -65,27 +65,26 @@ function text(x, y, value, attrs) {
 }
 
 function fontStack(weight, hebrewOnly) {
-  var hebrew = "Heebo";
-  var latin = "Montserrat";
+  var hebrew = "Heebo Light";
+  var latin = "Montserrat Light";
   var svgWeight = 400;
   if (weight >= 800) {
     hebrew = "Heebo ExtraBold";
     latin = "Montserrat ExtraBold";
   } else if (weight >= 700) {
+    hebrew = "Heebo";
+    latin = "Montserrat";
     svgWeight = 700;
-  } else if (weight >= 600) {
-    hebrew = "Heebo SemiBold";
-    latin = "Montserrat SemiBold";
   } else if (weight >= 500) {
-    hebrew = "Heebo Medium";
-    latin = "Montserrat Medium";
+    hebrew = "Heebo";
+    latin = "Montserrat";
   }
   if (hebrewOnly) latin = hebrew;
   return { family: hebrew, hebrew: hebrew, latin: latin, weight: svgWeight };
 }
 
 function fontFiles() {
-  var weights = [400, 500, 600, 700, 800];
+  var weights = [300, 400, 500, 600, 700, 800];
   var files = [findFile(["netlify", "functions", "fonts", "SuezOne-Regular.ttf"])];
   weights.forEach(function (weight) {
     files.push(findFile(["netlify", "functions", "fonts", "Heebo-" + weight + ".ttf"]));

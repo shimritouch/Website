@@ -72,10 +72,12 @@ test("hebrew weights match the preview faces", function () {
     status: "active",
   });
   assert.match(svg, /font-family="Heebo ExtraBold"[^>]*>[^<]*לבתיש שלנו/);
-  assert.match(svg, /font-family="Heebo Medium"[^>]*>[^<]*ברכה קלה/);
+  assert.match(svg, /font-family="Heebo"[^>]*>[^<]*ברכה קלה/);
   assert.match(svg, /font-family="Heebo ExtraBold"[^>]*>[^<]*שני/);
-  assert.match(svg, /font-family="Heebo"[^>]*>[^<]*קוד שובר/);
+  assert.match(svg, /font-family="Heebo" font-weight="700"[^>]*>[^<]*קוד שובר/);
   assert.match(svg, /font-family="Montserrat ExtraBold"[^>]*>[^<]*400133/);
-  assert.match(svg, /font-family="Montserrat Medium"[^>]*>[^<]*60/);
-  assert.equal(svg.includes("Montserrat Medium, Heebo"), false);
+  assert.match(svg, /font-family="Montserrat"[^>]*>[^<]*60/);
+  assert.match(svg, /font-family="Heebo Light"/);
+  assert.equal(svg.includes("Heebo Medium"), false);
+  assert.equal(svg.includes("Heebo SemiBold"), false);
 });

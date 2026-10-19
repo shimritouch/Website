@@ -35,29 +35,53 @@ function esc(value) {
     .replace(/"/g, "&quot;");
 }
 
-function rtlValue(value) {
-  var raw = String(value || "");
-  if (raw.charAt(0) === "\u202B") return raw;
-  return "\u202B" + raw + "\u202C";
+function textRuns(value) {
+  return String(value || "")
+    .split(/([A-Za-z0-9]+(?:[./-][A-Za-z0-9]+)*)/)
+    .filter(function (part) {
+      return part !== "";
+    });
 }
 
 function text(x, y, value, attrs) {
   var spacing = attrs.spacing ? ' letter-spacing="' + attrs.spacing.toFixed(2) + '"' : "";
+  var runs = textRuns(value);
+  if (!runs.length) runs = [""];
+  var body = runs
+    .map(function (part, index) {
+      var latin = /^[A-Za-z0-9]/.test(part);
+      var family = attrs.forceFamily || (latin ? attrs.latin || attrs.family : attrs.hebrew || attrs.family);
+      var shown = part;
+      if (index === 0) shown = "\u202B" + shown;
+      if (index === runs.length - 1) shown += "\u202C";
+      return '<tspan font-family="' + family + '" font-weight="' + attrs.weight + '">' + esc(shown) + "</tspan>";
+    })
+    .join("");
   return (
     '<text x="' + Math.round(x) + '" y="' + Math.round(y) + '" text-anchor="' + (attrs.anchor || "middle") +
-    '" direction="rtl" font-family="' + attrs.family + '" font-size="' + Math.round(attrs.size) +
-    '" font-weight="' + attrs.weight + '" fill="' + attrs.fill + '"' + spacing + ">" + esc(rtlValue(value)) + "</text>"
+    '" direction="rtl" font-size="' + Math.round(attrs.size) +
+    '" fill="' + attrs.fill + '"' + spacing + ">" + body + "</text>"
   );
 }
 
 function fontStack(weight, hebrewOnly) {
-  var suffix =
-    weight >= 800 ? " ExtraBold" : weight >= 600 && weight < 700 ? " SemiBold" : weight >= 500 && weight < 600 ? " Medium" : "";
-  var hebrew = "Heebo" + suffix;
-  return {
-    family: hebrewOnly ? hebrew : "Montserrat" + suffix + ", " + hebrew,
-    weight: suffix ? 400 : weight >= 700 ? 700 : 400,
-  };
+  var hebrew = "Heebo";
+  var latin = "Montserrat";
+  var svgWeight = 400;
+  if (weight >= 800) {
+    hebrew = "Heebo ExtraBold";
+    latin = "Montserrat ExtraBold";
+  } else if (weight >= 700) {
+    svgWeight = 700;
+  } else if (weight >= 600) {
+    hebrew = "Heebo SemiBold";
+    latin = "Montserrat SemiBold";
+  } else if (weight >= 500) {
+    hebrew = "Heebo Medium";
+    latin = "Montserrat Medium";
+  }
+  if (hebrewOnly) latin = hebrew;
+  return { family: hebrew, hebrew: hebrew, latin: latin, weight: svgWeight };
 }
 
 function fontFiles() {
@@ -130,7 +154,7 @@ function inkWidth(png) {
 var measureCache = {};
 function measureText(value, attrs) {
   var size = Math.round(attrs.size);
-  var key = [value, size, attrs.weight, attrs.family, attrs.spacing || 0].join("\n");
+  var key = [value, size, attrs.weight, attrs.family, attrs.hebrew || "", attrs.latin || "", attrs.forceFamily || "", attrs.spacing || 0].join("\n");
   if (measureCache[key]) return measureCache[key];
   var fonts = fontFiles();
   var svg =
@@ -153,9 +177,7 @@ function measureText(value, attrs) {
   return measureCache[key];
 }
 
-function wrapText(value, attrs, maxWidth) {
-  var raw = String(value || "").replace(/\s+/g, " ").trim();
-  if (!raw) return [""];
+function wrapParagraph(raw, attrs, maxWidth) {
   var lines = [];
   var current = "";
   function fits(sample) {
@@ -185,6 +207,22 @@ function wrapText(value, attrs, maxWidth) {
   });
   if (current) lines.push(current);
   return lines;
+}
+
+function wrapText(value, attrs, maxWidth) {
+  var paragraphs = String(value || "").replace(/\r\n/g, "\n").split("\n");
+  var lines = [];
+  paragraphs.forEach(function (paragraph) {
+    var raw = paragraph.replace(/[ \t\f\v\u00a0]+/g, " ").trim();
+    if (!raw) {
+      lines.push("");
+      return;
+    }
+    wrapParagraph(raw, attrs, maxWidth).forEach(function (line) {
+      lines.push(line);
+    });
+  });
+  return lines.length ? lines : [""];
 }
 
 function logoImage() {
@@ -225,6 +263,8 @@ function buildVoucherSvg(voucher) {
       size: size,
       weight: stack.weight,
       family: stack.family,
+      hebrew: stack.hebrew,
+      latin: stack.latin,
       marginTop: cqi(marginTop) * scale,
       marginBottom: cqi(marginBottom) * scale,
       lineHeight: lineHeight,
@@ -241,6 +281,8 @@ function buildVoucherSvg(voucher) {
     var messageStack = fontStack(500);
     var messageAttrs = {
       family: messageStack.family,
+      hebrew: messageStack.hebrew,
+      latin: messageStack.latin,
       size: messageSize,
       weight: messageStack.weight,
       fill: "#243026",
@@ -286,8 +328,9 @@ function buildVoucherSvg(voucher) {
   var kickerSize = cqi(4.6);
   var kickerTop = logoY + (headH - kickerSize * 1.15) / 2;
   parts.push(
-    text(WIDTH / 2, baseline(kickerTop, kickerSize, 1.15), "\u202Bשובר עיסוי ב ShimriTouch\u202C", {
+    text(WIDTH / 2, baseline(kickerTop, kickerSize, 1.15), "שובר עיסוי ב ShimriTouch", {
       family: "Suez One",
+      forceFamily: "Suez One",
       size: kickerSize,
       weight: 400,
       fill: "#5d6b56",
@@ -300,6 +343,8 @@ function buildVoucherSvg(voucher) {
       parts.push(
         text(WIDTH / 2, baseline(y, entry.size, entry.lineHeight), line, {
           family: entry.family,
+          hebrew: entry.hebrew,
+          latin: entry.latin,
           size: entry.size,
           weight: entry.weight,
           fill: "#243026",
@@ -334,6 +379,8 @@ function buildVoucherSvg(voucher) {
   var expiryStack = fontStack(400);
   var expiryAttrs = {
     family: expiryStack.family,
+    hebrew: expiryStack.hebrew,
+    latin: expiryStack.latin,
     size: expirySize,
     weight: expiryStack.weight,
     fill: "#243026",
@@ -353,6 +400,7 @@ function buildVoucherSvg(voucher) {
   parts.push(
     text(WIDTH / 2, baseline(brandTop, brandSize, 1.5), "ShimriTouch", {
       family: "Suez One",
+      forceFamily: "Suez One",
       size: brandSize,
       weight: 400,
       fill: "#8d9794",
@@ -371,6 +419,8 @@ function buildVoucherSvg(voucher) {
     var dateStack = fontStack(700, true);
     var titleAttrs = {
       family: titleStack.family,
+      hebrew: titleStack.hebrew,
+      latin: titleStack.latin,
       size: titleSize,
       weight: titleStack.weight,
       fill: stampColor,
@@ -378,6 +428,8 @@ function buildVoucherSvg(voucher) {
     };
     var dateAttrs = {
       family: dateStack.family,
+      hebrew: dateStack.hebrew,
+      latin: dateStack.latin,
       size: dateSize,
       weight: dateStack.weight,
       fill: stampColor,

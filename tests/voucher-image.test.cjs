@@ -19,7 +19,7 @@ test("voucher image is a png of the card", function () {
 });
 
 function textSize(svg, sample) {
-  var match = svg.match(new RegExp('font-size="(\\d+)"[^>]*>[^<]*' + sample));
+  var match = svg.match(new RegExp('<text[^>]*font-size="(\\d+)"[^>]*>\\s*<tspan[^>]*>[^<]*' + sample));
   return match ? Number(match[1]) : 0;
 }
 
@@ -43,4 +43,39 @@ test("a long greeting shrinks like the on-screen card", function () {
     status: "active",
   });
   assert.ok(textSize(longCard, "לנועה") < textSize(shortCard, "לספיר"));
+});
+
+test("greeting line breaks stay on their own lines", function () {
+  var svg = image.buildVoucherSvg({
+    recipient_name: "לבתיש שלנו",
+    message: "שורה אחת\nשורה שניה\nשורה שלישית",
+    duration: 60,
+    sender_name: "שני",
+    voucher_code: "400133",
+    expiry_date: "14/10/2027",
+    status: "active",
+  });
+  assert.equal((svg.match(/שורה אחת/g) || []).length, 1);
+  assert.equal((svg.match(/שורה שניה/g) || []).length, 1);
+  assert.equal((svg.match(/שורה שלישית/g) || []).length, 1);
+  assert.equal(svg.includes("שורה אחת שורה שניה"), false);
+});
+
+test("hebrew weights match the preview faces", function () {
+  var svg = image.buildVoucherSvg({
+    recipient_name: "לבתיש שלנו",
+    message: "ברכה קלה",
+    duration: 60,
+    sender_name: "שני",
+    voucher_code: "400133",
+    expiry_date: "14/10/2027",
+    status: "active",
+  });
+  assert.match(svg, /font-family="Heebo ExtraBold"[^>]*>[^<]*לבתיש שלנו/);
+  assert.match(svg, /font-family="Heebo Medium"[^>]*>[^<]*ברכה קלה/);
+  assert.match(svg, /font-family="Heebo ExtraBold"[^>]*>[^<]*שני/);
+  assert.match(svg, /font-family="Heebo"[^>]*>[^<]*קוד שובר/);
+  assert.match(svg, /font-family="Montserrat ExtraBold"[^>]*>[^<]*400133/);
+  assert.match(svg, /font-family="Montserrat Medium"[^>]*>[^<]*60/);
+  assert.equal(svg.includes("Montserrat Medium, Heebo"), false);
 });

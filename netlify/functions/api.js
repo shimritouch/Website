@@ -47,10 +47,12 @@ function pngResponse(png) {
 }
 
 function denyAdmin(auth) {
-  return json(401, {
-    error: "אין הרשאת ניהול (" + auth.reason + ")",
-    reason: auth.reason,
-  });
+  var reason = auth && auth.reason ? auth.reason : "missing_init";
+  var error =
+    reason === "expired"
+      ? "הסשן פג. סגרו את החלון ופתחו מחדש את שובר חדש"
+      : "אין הרשאת ניהול (" + reason + ")";
+  return json(401, { error: error, reason: reason });
 }
 
 exports.handler = async function (event) {

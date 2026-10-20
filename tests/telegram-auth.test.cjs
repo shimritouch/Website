@@ -66,3 +66,30 @@ test("accepts a signed webapp auth query when initData is missing", function () 
   assert.equal(result.ok, true);
   assert.equal(result.reason, "webapp_auth");
 });
+
+test("an expired signed session is not reported as an unknown user", function () {
+  process.env.TELEGRAM_BOT_TOKEN = "test-token";
+  process.env.ALLOWED_TELEGRAM_IDS = "244510989";
+  process.env.VOUCHER_API_KEY = "api-key";
+  var exp = Math.floor(Date.now() / 1000) - 60;
+  var payload = "244510989." + exp;
+  var sig = crypto.createHmac("sha256", "api-key").update(payload).digest("hex");
+  var result = auth.inspectAdmin({ headers: {} }, { webapp_auth: payload + "." + sig });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, "expired");
+});
+
+test("a fresh signed session is used when initData is stale", function () {
+  process.env.TELEGRAM_BOT_TOKEN = "test-token";
+  process.env.ALLOWED_TELEGRAM_IDS = "244510989";
+  process.env.VOUCHER_API_KEY = "api-key";
+  var exp = Math.floor(Date.now() / 1000) + 600;
+  var payload = "244510989." + exp;
+  var sig = crypto.createHmac("sha256", "api-key").update(payload).digest("hex");
+  var result = auth.inspectAdmin(
+    { headers: {} },
+    { init_data: "user=%7B%7D&hash=nope", webapp_auth: payload + "." + sig }
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.reason, "webapp_auth");
+});

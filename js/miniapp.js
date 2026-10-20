@@ -21,6 +21,28 @@
     return new URLSearchParams(location.search).get("auth") || "";
   }
 
+  function refreshStoredInitData() {
+    var hash = location.hash || "";
+    var params = new URLSearchParams(hash.charAt(0) === "#" ? hash.slice(1) : hash);
+    var data = params.get("tgWebAppData") || new URLSearchParams(location.search).get("tgWebAppData") || "";
+    if (!data) return;
+    window.__tgInitData = data;
+    try {
+      sessionStorage.setItem("tg_init_data", data);
+    } catch (err) {}
+  }
+
+  function signedAuthFresh() {
+    var signed = webappAuth();
+    if (!signed) return "";
+    var exp = parseInt(signed.split(".")[1], 10);
+    if (exp && Math.floor(Date.now() / 1000) > exp) return "";
+    return signed;
+  }
+
+  refreshStoredInitData();
+  window.addEventListener("pageshow", refreshStoredInitData);
+
   var form = document.getElementById("voucher-form");
   var formStep = document.getElementById("form-step");
   var previewStep = document.getElementById("preview-step");
@@ -47,7 +69,7 @@
       recipient_phone: data.get("recipient_phone"),
     };
     var initData = telegramInitData();
-    var signed = webappAuth();
+    var signed = signedAuthFresh();
     if (initData) fields.init_data = initData;
     if (signed) fields.webapp_auth = signed;
     return fields;
@@ -56,6 +78,12 @@
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     formError.textContent = "";
+    var closed = sessionClosedMessage();
+    if (closed) {
+      formError.textContent = closed;
+      if (tg) tg.close();
+      return;
+    }
     if (!telegramInitData() && !webappAuth()) {
       formError.textContent = "אין הרשאת ניהול (missing_init)";
       return;
@@ -94,15 +122,21 @@
   function authPayload(extra) {
     var payload = extra || {};
     var initData = telegramInitData();
-    var signed = webappAuth();
+    var signed = signedAuthFresh();
     if (initData) payload.init_data = initData;
     if (signed) payload.webapp_auth = signed;
     return payload;
   }
 
   function nextCodeUrl() {
-    var signed = webappAuth();
+    var signed = signedAuthFresh();
     return signed ? "/api/vouchers/next-code?auth=" + encodeURIComponent(signed) : "/api/vouchers/next-code";
+  }
+
+  function sessionClosedMessage() {
+    if (telegramInitData() || signedAuthFresh()) return "";
+    if (!webappAuth()) return "";
+    return "הסשן פג. סגרו את החלון ופתחו מחדש את שובר חדש";
   }
 
   document.getElementById("edit-code-btn").addEventListener("click", function () {
@@ -154,8 +188,21 @@
 
   document.getElementById("issue-btn").addEventListener("click", function () {
     if (!draft) return;
+    var closed = sessionClosedMessage();
+    if (closed) {
+      previewStatus.textContent = closed;
+      if (tg) tg.close();
+      return;
+    }
+    var payload = Object.assign({}, draft);
+    delete payload.init_data;
+    delete payload.webapp_auth;
+    var initData = telegramInitData();
+    var signed = signedAuthFresh();
+    if (initData) payload.init_data = initData;
+    if (signed) payload.webapp_auth = signed;
     previewStatus.textContent = "מפיק שובר...";
-    fetch("/api/vouchers", { method: "POST", headers: headers(), body: JSON.stringify(draft) })
+    fetch("/api/vouchers", { method: "POST", headers: headers(), body: JSON.stringify(payload) })
       .then(function (res) {
         return res.json().then(function (data) {
           if (!res.ok) throw new Error(data.error || "ההפקה נכשלה");

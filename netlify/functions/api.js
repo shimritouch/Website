@@ -171,7 +171,7 @@ exports.handler = async function (event) {
           total_treatments: parsed.total,
         });
       }, event);
-      return json(201, { created: true, package: pkg });
+      return json(200, { created: true, package: pkg });
     }
 
     if (method === "GET" && path === "/packages") {

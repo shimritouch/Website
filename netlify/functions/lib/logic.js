@@ -203,7 +203,10 @@ function createPackage(store, payload) {
   var parsed = parseSeriesNote(payload.package_title || payload.notes);
   var total = payload.total_treatments || (parsed && parsed.total);
   var title = payload.package_title || (parsed && parsed.title);
-  if (!payload.client_name || !isValidPhone(phone) || !title || !total) {
+  if (phone && !isValidPhone(phone)) {
+    throw new Error("לא ניתן לפתוח סדרת טיפולים מההערה");
+  }
+  if (!String(payload.client_name || "").trim() || !title || !total) {
     throw new Error("לא ניתן לפתוח סדרת טיפולים מההערה");
   }
   var id = "pkg_" + Date.now();

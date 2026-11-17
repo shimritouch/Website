@@ -143,3 +143,20 @@ test("series note creates package slots", function () {
   logic.redeemTreatment(store, pkg.id, 1);
   assert.equal(logic.packageStatus(pkg), "open");
 });
+
+test("a receipt series note is saved without a phone and without a voucher", function () {
+  var parsed = logic.parseSeriesNote("סדרה 3 טיפולים");
+  assert.equal(parsed.total, 3);
+  var store = { nextCode: 400131, vouchers: {}, packages: {} };
+  var pkg = logic.createPackage(store, {
+    client_name: "אלינור לוי",
+    phone: "",
+    package_title: parsed.title,
+    total_treatments: parsed.total,
+  });
+  assert.equal(pkg.client_name, "אלינור לוי");
+  assert.equal(pkg.phone, "");
+  assert.equal(pkg.total_treatments, 3);
+  assert.equal(logic.listPackages(store, "open").length, 1);
+  assert.equal(Object.keys(store.vouchers).length, 0);
+});

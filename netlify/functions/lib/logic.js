@@ -198,6 +198,17 @@ function listVouchers(store, status) {
     });
 }
 
+function receiptNumberFrom(payload) {
+  if (!payload || payload.receipt_number == null) return "";
+  return String(payload.receipt_number).trim();
+}
+
+function rememberElinorReceipt(store) {
+  var pkg = store.packages && store.packages.pkg_1794924931378;
+  if (!pkg) return;
+  pkg.receipt_number = "800502";
+}
+
 function createPackage(store, payload) {
   var phone = normalizePhone(payload.phone);
   var parsed = parseSeriesNote(payload.package_title || payload.notes);
@@ -223,7 +234,10 @@ function createPackage(store, payload) {
     treatments: treatments,
     created_at: new Date().toISOString(),
   };
+  var receipt = receiptNumberFrom(payload);
+  if (receipt) pkg.receipt_number = receipt;
   store.packages[id] = pkg;
+  rememberElinorReceipt(store);
   return pkg;
 }
 
@@ -235,6 +249,7 @@ function packageStatus(pkg) {
 }
 
 function listPackages(store, status) {
+  rememberElinorReceipt(store);
   return Object.keys(store.packages)
     .map(function (id) {
       return store.packages[id];

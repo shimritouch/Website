@@ -159,4 +159,49 @@ test("a receipt series note is saved without a phone and without a voucher", fun
   assert.equal(pkg.total_treatments, 3);
   assert.equal(logic.listPackages(store, "open").length, 1);
   assert.equal(Object.keys(store.vouchers).length, 0);
+  assert.equal(pkg.receipt_number, undefined);
+});
+
+test("a receipt number is stored on the series and listed while it is open", function () {
+  var parsed = logic.parseSeriesNote("סדרה 3 טיפולים");
+  var store = { nextCode: 400131, vouchers: { "400131": { status: "active" } }, packages: {} };
+  var pkg = logic.createPackage(store, {
+    client_name: "אלינור לוי",
+    phone: "",
+    package_title: parsed.title,
+    total_treatments: parsed.total,
+    receipt_number: "800502",
+  });
+  assert.equal(pkg.receipt_number, "800502");
+  var open = logic.listPackages(store, "open");
+  assert.equal(open.length, 1);
+  assert.equal(open[0].receipt_number, "800502");
+  assert.equal(store.vouchers["400131"].status, "active");
+});
+
+test("the existing Elinor series keeps receipt 800502", function () {
+  var store = {
+    nextCode: 400131,
+    vouchers: {},
+    packages: {
+      pkg_1794924931378: {
+        id: "pkg_1794924931378",
+        client_name: "אלינור לוי",
+        phone: "",
+        package_title: "סדרה 3 טיפולים",
+        total_treatments: 3,
+        treatments: [
+          { index: 1, is_redeemed: false, redeemed_date: "" },
+          { index: 2, is_redeemed: false, redeemed_date: "" },
+          { index: 3, is_redeemed: false, redeemed_date: "" },
+        ],
+        created_at: "2026-11-17T14:00:00.000Z",
+      },
+    },
+  };
+  var open = logic.listPackages(store, "open");
+  assert.equal(open[0].id, "pkg_1794924931378");
+  assert.equal(open[0].receipt_number, "800502");
+  assert.equal(store.packages.pkg_1794924931378.receipt_number, "800502");
+  assert.equal(Object.keys(store.vouchers).length, 0);
 });

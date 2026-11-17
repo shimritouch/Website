@@ -169,6 +169,7 @@ exports.handler = async function (event) {
           phone: body.phone,
           package_title: parsed.title,
           total_treatments: parsed.total,
+          receipt_number: body.receipt_number,
         });
       }, event);
       return json(200, { created: true, package: pkg });
